@@ -9,8 +9,8 @@ const _notoSansJP = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
-  title: 'Shappy - モデルを身近に',
-  description: 'カットモデルと美容師（サロン）をつなぐ女性向けマッチングサービス',
+  title: 'Snappy - モデルを身近に',
+  description: 'カットモデルと美容師（サロン）をつなぐマッチングサービス',
   generator: 'v0.app',
   icons: {
     icon: [
