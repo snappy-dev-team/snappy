@@ -1,8 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function HeroSection() {
   return (
@@ -31,17 +31,16 @@ export default function HeroSection() {
               </span>
             </h1>
             <p className="text-lg md:text-xl font-medium text-muted-foreground mt-2">
-              カットモデル募集を、もっと気軽に、もっと自分らしく。
+              カットモデル募集を、もっと気軽に、もっと自由に。
             </p>
           </div>
 
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-lg">
-            美容師さん・サロンと、モデルになりたいあなたをつなぐマッチングサービスです。
-            条件やエリア、日時から、自分にぴったりの募集を探せます。
+            美容師さん・サロンと、モデルになりたいあなたをつなぐマッチングサービスです。条件やエリア、日時から、あなたにぴったりの募集を探せます。
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-2">
-            <Link href="/register?type=salon">
+            <Link href="/register?type=client">
               <Button
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-12 py-6 text-lg font-semibold w-full sm:w-auto"

@@ -7,9 +7,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* ブランド情報 */}
           <div className="col-span-1 md:col-span-1">
-            <h3 className="text-primary text-xl font-bold mb-4">Shappy</h3>
+            <h3 className="text-primary text-xl font-bold mb-4">Snappy</h3>
             <p className="text-sm text-muted-foreground">
-              カットモデルと美容師をつなぐ<br />
+              カットモデルと美容師をつなぐ
+              <br />
               マッチングサービス
             </p>
           </div>
@@ -46,8 +47,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/register?type=shop" className="text-muted-foreground hover:text-primary transition-colors">
-                  サロン登録
+                <Link href="/register?type=client" className="text-muted-foreground hover:text-primary transition-colors">
+                  クライアント登録
                 </Link>
               </li>
             </ul>
@@ -83,7 +84,7 @@ export default function Footer() {
 
         {/* コピーライト */}
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Shappy. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Snappy. All rights reserved.</p>
         </div>
       </div>
     </footer>

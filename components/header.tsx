@@ -8,7 +8,7 @@ export default function Header() {
       <div className="flex items-center justify-between h-14 px-4 md:px-8 max-w-6xl mx-auto">
         {/* Logo */}
         <Link href="/" className="text-2xl font-bold tracking-wide text-primary hover:opacity-80 transition-opacity">
-          Shappy
+          Snappy
         </Link>
 
         {/* Navigation */}

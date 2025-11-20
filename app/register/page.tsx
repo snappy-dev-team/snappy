@@ -3,11 +3,13 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useState, Suspense } from 'react'
+import { ChangeEvent, FormEvent, Suspense, useState } from 'react'
 
 function RegisterForm() {
   const searchParams = useSearchParams()
   const type = searchParams.get('type') || 'model'
+  const isModel = type === 'model'
+
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -22,9 +24,7 @@ function RegisterForm() {
     staffGender: '',
   })
 
-  const isModel = type === 'model'
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target
     if (inputType === 'checkbox') {
       setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }))
@@ -33,7 +33,7 @@ function RegisterForm() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     console.log('Form submitted:', formData)
     alert('登録ありがとうございます！確認メールをお送りしました。')
@@ -45,7 +45,7 @@ function RegisterForm() {
       <div className="border-b border-border">
         <div className="max-w-2xl mx-auto px-4 md:px-8 py-4">
           <Link href="/" className="text-primary font-bold text-lg hover:opacity-80 transition-opacity">
-            ← Shappy
+            Snappy
           </Link>
         </div>
       </div>
@@ -54,12 +54,12 @@ function RegisterForm() {
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-12">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            {isModel ? 'モデル登録' : 'サロン登録'}
+            {isModel ? 'モデル登録' : 'クライアント登録'}
           </h1>
           <p className="text-muted-foreground">
-            {isModel 
+            {isModel
               ? 'カットモデルとして登録してください。無料です。'
-              : 'あなたのサロンを登録して、モデルを探しましょう。'}
+              : 'あなたのサロンやサービスを登録して、モデルを探しましょう。'}
           </p>
         </div>
 
@@ -73,12 +73,12 @@ function RegisterForm() {
               モデル登録
             </Button>
           </Link>
-          <Link href="/register?type=salon">
+          <Link href="/register?type=client">
             <Button
               variant={!isModel ? 'default' : 'outline'}
               className={!isModel ? 'bg-primary text-primary-foreground' : ''}
             >
-              サロン登録
+              クライアント登録
             </Button>
           </Link>
         </div>
@@ -190,11 +190,11 @@ function RegisterForm() {
               {/* Advanced Filter Preferences for Models */}
               <div className="pt-4 border-t border-border">
                 <h3 className="text-lg font-semibold text-foreground mb-4">こだわり条件</h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      スタッフの性別 <span className="text-secondary">*</span>
+                      スタイリストの性別 <span className="text-secondary">*</span>
                     </label>
                     <select
                       name="staffGender"
@@ -205,8 +205,8 @@ function RegisterForm() {
                     >
                       <option value="">選択してください</option>
                       <option value="any">どちらでもOK</option>
-                      <option value="female">女性スタッフを希望</option>
-                      <option value="male">男性スタッフを希望</option>
+                      <option value="female">女性スタイリストを希望</option>
+                      <option value="male">男性スタイリストを希望</option>
                     </select>
                   </div>
 
@@ -245,7 +245,7 @@ function RegisterForm() {
             </>
           ) : (
             <>
-              {/* Salon Registration Form */}
+              {/* Client Registration Form */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   サロン名 <span className="text-secondary">*</span>
@@ -344,7 +344,7 @@ function RegisterForm() {
 
               <div className="pt-4 border-t border-border">
                 <h3 className="text-lg font-semibold text-foreground mb-4">こだわり条件</h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
@@ -373,7 +373,7 @@ function RegisterForm() {
                         onChange={handleChange}
                         className="w-4 h-4 rounded border-border"
                       />
-                      <span className="text-sm text-foreground">クレジットカード決済に対応している</span>
+                      <span className="text-sm text-foreground">クレジットカード決済に対応しています</span>
                     </label>
                   </div>
 
