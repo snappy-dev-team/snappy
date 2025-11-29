@@ -1,16 +1,34 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import Header from '@/components/header'
+import { setSessionUser } from '@/lib/auth'
+import { createUser, UserPayload } from '@/lib/users'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ChangeEvent, FormEvent, Suspense, useState } from 'react'
 
+type FormState = {
+  name: string
+  age: string
+  email: string
+  phone: string
+  location: string
+  studio: string
+  experience: string
+  gender: string
+  acceptCard: boolean
+  budget: string
+  staffGender: string
+}
+
 function RegisterForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const type = searchParams.get('type') || 'model'
+  const type = searchParams.get('type') === 'client' ? 'client' : 'model'
   const isModel = type === 'model'
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormState>({
     name: '',
     age: '',
     email: '',
@@ -23,6 +41,8 @@ function RegisterForm() {
     budget: '',
     staffGender: '',
   })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target
@@ -33,24 +53,37 @@ function RegisterForm() {
     }
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    alert('登録ありがとうございます！確認メールをお送りしました。')
+    setError(null)
+    setSubmitting(true)
+
+    const payload: UserPayload = {
+      role: isModel ? 'model' : 'client',
+      name: isModel ? formData.name : formData.studio || formData.name,
+      email: formData.email,
+      age: isModel && formData.age ? Number(formData.age) : undefined,
+      profile: isModel
+        ? `希望スタッフ:${formData.staffGender || '未設定'} / 予算:${formData.budget || '未設定'} / カード:${formData.acceptCard ? '可' : '不明'}`
+        : `サロン:${formData.studio || '未設定'} / 経験:${formData.experience || '未設定'} / スタッフ構成:${formData.staffGender || '未設定'} / カード:${formData.acceptCard ? '可' : '不明'}`,
+    }
+
+    try {
+      const user = await createUser(payload)
+      setSessionUser(user)
+      router.push('/mypage')
+    } catch (err) {
+      console.error(err)
+      setError('登録に失敗しました。時間をおいて再度お試しください。')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 md:px-8 py-4">
-          <Link href="/" className="text-primary font-bold text-lg hover:opacity-80 transition-opacity">
-            Snappy
-          </Link>
-        </div>
-      </div>
+      <Header />
 
-      {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-12">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
@@ -58,12 +91,11 @@ function RegisterForm() {
           </h1>
           <p className="text-muted-foreground">
             {isModel
-              ? 'カットモデルとして登録してください。無料です。'
-              : 'あなたのサロンやサービスを登録して、モデルを探しましょう。'}
+              ? 'カットモデルとして登録してください。無料でご利用いただけます。'
+              : 'サロンやサービスを登録して、モデルを探しましょう。'}
           </p>
         </div>
 
-        {/* Type Selector */}
         <div className="flex gap-4 mb-8">
           <Link href="/register?type=model">
             <Button
@@ -83,11 +115,9 @@ function RegisterForm() {
           </Link>
         </div>
 
-        {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {isModel ? (
             <>
-              {/* Model Registration Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
@@ -151,26 +181,6 @@ function RegisterForm() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  地域 <span className="text-secondary">*</span>
-                </label>
-                <select
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                >
-                  <option value="">選択してください</option>
-                  <option value="tsukuba">茨城県つくば市</option>
-                  <option value="ibaraki">その他茨城県</option>
-                  <option value="tokyo">東京都</option>
-                  <option value="osaka">大阪府</option>
-                  <option value="other">その他</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
                   性別 <span className="text-secondary">*</span>
                 </label>
                 <select
@@ -187,26 +197,24 @@ function RegisterForm() {
                 </select>
               </div>
 
-              {/* Advanced Filter Preferences for Models */}
               <div className="pt-4 border-t border-border">
                 <h3 className="text-lg font-semibold text-foreground mb-4">こだわり条件</h3>
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      スタイリストの性別 <span className="text-secondary">*</span>
+                      希望するスタイリストの性別
                     </label>
                     <select
                       name="staffGender"
                       value={formData.staffGender}
                       onChange={handleChange}
                       className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                      required
                     >
                       <option value="">選択してください</option>
                       <option value="any">どちらでもOK</option>
-                      <option value="female">女性スタイリストを希望</option>
-                      <option value="male">男性スタイリストを希望</option>
+                      <option value="female">女性スタイリスト</option>
+                      <option value="male">男性スタイリスト</option>
                     </select>
                   </div>
 
@@ -219,14 +227,12 @@ function RegisterForm() {
                         onChange={handleChange}
                         className="w-4 h-4 rounded border-border"
                       />
-                      <span className="text-sm text-foreground">クレジットカード決済に対応しているサロンを希望</span>
+                      <span className="text-sm text-foreground">クレジットカード決済を希望する</span>
                     </label>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      予算の上限
-                    </label>
+                    <label className="block text-sm font-medium text-foreground mb-2">予算の上限</label>
                     <select
                       name="budget"
                       value={formData.budget}
@@ -245,7 +251,6 @@ function RegisterForm() {
             </>
           ) : (
             <>
-              {/* Client Registration Form */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   サロン名 <span className="text-secondary">*</span>
@@ -264,7 +269,7 @@ function RegisterForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    スタイリスト名 <span className="text-secondary">*</span>
+                    担当者名 <span className="text-secondary">*</span>
                   </label>
                   <input
                     type="text"
@@ -322,28 +327,8 @@ function RegisterForm() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  地域 <span className="text-secondary">*</span>
-                </label>
-                <select
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                >
-                  <option value="">選択してください</option>
-                  <option value="tsukuba">茨城県つくば市</option>
-                  <option value="ibaraki">その他茨城県</option>
-                  <option value="tokyo">東京都</option>
-                  <option value="osaka">大阪府</option>
-                  <option value="other">その他</option>
-                </select>
-              </div>
-
               <div className="pt-4 border-t border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">こだわり条件</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-4">募集条件</h3>
 
                 <div className="space-y-4">
                   <div>
@@ -373,14 +358,12 @@ function RegisterForm() {
                         onChange={handleChange}
                         className="w-4 h-4 rounded border-border"
                       />
-                      <span className="text-sm text-foreground">クレジットカード決済に対応しています</span>
+                      <span className="text-sm text-foreground">クレジットカード決済に対応している</span>
                     </label>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      報酬
-                    </label>
+                    <label className="block text-sm font-medium text-foreground mb-2">報酬</label>
                     <select
                       name="budget"
                       value={formData.budget}
@@ -388,9 +371,9 @@ function RegisterForm() {
                       className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="">選択してください</option>
-                      <option value="free">無料</option>
+                      <option value="free">無償</option>
                       <option value="5000">5,000円</option>
-                      <option value="10000">10,000円以上</option>
+                      <option value="10000">10,000円</option>
                     </select>
                   </div>
                 </div>
@@ -398,14 +381,16 @@ function RegisterForm() {
             </>
           )}
 
-          {/* Submit Button */}
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+
           <div className="pt-4">
             <Button
               type="submit"
               size="lg"
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-3 font-medium"
+              disabled={submitting}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-3 font-medium disabled:opacity-70"
             >
-              登録する
+              {submitting ? '送信中...' : '登録する'}
             </Button>
           </div>
 

@@ -1,8 +1,17 @@
 'use client'
 
+import { getSessionUser } from '@/lib/auth'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function Header() {
+  const [mypageHref, setMypageHref] = useState('/login')
+
+  useEffect(() => {
+    const stored = getSessionUser()
+    setMypageHref(stored ? '/mypage' : '/login')
+  }, [])
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="flex items-center justify-between h-14 px-4 md:px-8 max-w-6xl mx-auto">
@@ -20,7 +29,7 @@ export default function Header() {
             モデル登録
           </Link>
           <Link
-            href="#"
+            href={mypageHref}
             className="text-sm text-muted-foreground hover:text-foreground transition-all hover:scale-105"
           >
             マイページ
