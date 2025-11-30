@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { Button } from '@/components/ui/button'
 import { getSessionUser, setSessionUser } from '@/lib/auth'
@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'model' | 'client'>('model')
-
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
