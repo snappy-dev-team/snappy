@@ -13,7 +13,7 @@ const buildProfile = (user: UserRecord) => ({
   name: user.name,
   roleLabel: user.role === 'client' ? 'クライアント' : 'モデル',
   location: '未設定',
-  tagline: user.profile || (user.role === 'client' ? 'モデルと出会いたいサロンです。' : 'ヘアモデルとして活動しています。'),
+  tagline: user.profile || (user.role === 'client' ? 'モデルと出会いたいサロンです。' : 'ヘアモデルとして活動しています!'),
   specialties: user.role === 'client' ? ['サロン運営'] : ['ヘアモデル'],
   stats: [
     { label: 'マッチ数', value: '12件', icon: Sparkles },
