@@ -2,18 +2,39 @@
 
 import { Card } from '@/components/ui/card'
 import { ChevronLeft, ChevronRight, Star, User } from 'lucide-react'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-const models = [
-  { id: 1, name: 'さくら', age: 23, location: '表参道', rating: 5, tags: ['カット', 'カラー'] },
-  { id: 2, name: 'えみ', age: 26, location: '渋谷', rating: 4.5, tags: ['カット', '撮影OK'] },
-  { id: 3, name: 'ひかり', age: 21, location: '新宿', rating: 5, tags: ['カラー'] },
-  { id: 4, name: 'みさき', age: 25, location: '銀座', rating: 4, tags: ['カット', 'パーマ'] },
-  { id: 5, name: 'あおい', age: 22, location: '六本木', rating: 5, tags: ['撮影OK'] },
-]
+type Model = {
+  id: number | string
+  name: string
+  age?: number
+  location?: string
+  rating?: number
+  tags?: string[]
+}
 
 export default function TopModels() {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [models, setModels] = useState<Model[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const res = await fetch('/api/models')
+        if (!res.ok) throw new Error('failed to fetch models')
+        const data = await res.json()
+        setModels(Array.isArray(data) ? data : [])
+      } catch (error) {
+        console.error('Failed to load models', error)
+        setModels([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchModels()
+  }, [])
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -24,6 +45,8 @@ export default function TopModels() {
       })
     }
   }
+
+  const hasModels = models.length > 0
 
   return (
     <section className="py-10 md:py-12 px-4 md:px-8">
@@ -41,76 +64,94 @@ export default function TopModels() {
 
         {/* Scroll Container */}
         <div className="relative">
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-all hover:scale-110"
-            aria-label="スクロール左"
-          >
-            <ChevronLeft className="w-5 h-5 text-primary" />
-          </button>
+          {hasModels && (
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-all hover:scale-110"
+              aria-label="スクロール左"
+            >
+              <ChevronLeft className="w-5 h-5 text-primary" />
+            </button>
+          )}
 
-          <div
-            ref={scrollRef}
-            className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
-            style={{ scrollBehavior: 'smooth' }}
-          >
-            {models.map((model) => (
-              <Card
-                key={model.id}
-                className="shrink-0 w-40 md:w-44 p-4 rounded-2xl border-border hover:shadow-md transition-shadow cursor-pointer"
+          {loading && (
+            <div className="py-8 text-center text-muted-foreground">
+              読み込み中...
+            </div>
+          )}
+
+          {!loading && !hasModels && (
+            <div className="py-8 px-4 text-center text-muted-foreground border border-dashed border-border rounded-xl bg-card/50">
+              現在表示できるトップモデルはありません。
+            </div>
+          )}
+
+          {hasModels && (
+            <>
+              <div
+                ref={scrollRef}
+                className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+                style={{ scrollBehavior: 'smooth' }}
               >
-                <div className="w-full aspect-square bg-linear-to-br from-primary/20 to-secondary/10 rounded-xl flex items-center justify-center mb-3">
-                  <User className="w-20 h-20 text-primary/40" />
-                </div>
+                {models.map((model) => (
+                  <Card
+                    key={model.id}
+                    className="shrink-0 w-40 md:w-44 p-4 rounded-2xl border-border hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="w-full aspect-square bg-linear-to-br from-primary/20 to-secondary/10 rounded-xl flex items-center justify-center mb-3">
+                      <User className="w-20 h-20 text-primary/40" />
+                    </div>
 
-                {/* Model Info */}
-                <div className="space-y-2">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">
-                      {model.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {model.age}歳 / {model.location}
-                    </p>
-                  </div>
+                    {/* Model Info */}
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-semibold text-foreground text-sm truncate">
+                          {model.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {model.age ? `${model.age}歳` : '年齢不明'} / {model.location ?? '場所不明'}
+                        </p>
+                      </div>
 
-                  {/* Rating */}
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-3.5 h-3.5 ${
-                          i < Math.floor(model.rating)
-                            ? 'fill-accent text-accent'
-                            : 'text-border'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                      {/* Rating */}
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3.5 h-3.5 ${
+                              i < Math.floor(model.rating ?? 0)
+                                ? 'fill-accent text-accent'
+                                : 'text-border'
+                            }`}
+                          />
+                        ))}
+                      </div>
 
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {model.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {(model.tags ?? []).map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
 
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-all hover:scale-110"
-            aria-label="スクロール右"
-          >
-            <ChevronRight className="w-5 h-5 text-primary" />
-          </button>
+              <button
+                onClick={() => scroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-all hover:scale-110"
+                aria-label="スクロール右"
+              >
+                <ChevronRight className="w-5 h-5 text-primary" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </section>
