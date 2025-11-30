@@ -5,9 +5,9 @@ import { getSessionUser, setSessionUser } from '@/lib/auth'
 import { findUserByEmail } from '@/lib/users'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, Suspense, useEffect, useState } from 'react'
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get('redirect') || '/mypage'
@@ -111,13 +111,13 @@ export default function LoginPage() {
 
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-3 font-medium"
-          >
-            ログイン
-          </Button>
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-3 font-medium"
+      >
+        ログイン
+      </Button>
 
           <p className="text-xs text-muted-foreground text-center">
             はじめての方は<a href="/register" className="text-primary ml-1 underline underline-offset-4">新規登録</a>へどうぞ。
@@ -125,5 +125,13 @@ export default function LoginPage() {
         </form>
       </main>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">読み込み中...</div>}>
+      <LoginPageContent />
+    </Suspense>
   )
 }

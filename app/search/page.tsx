@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, FormEvent } from 'react'
+import { useEffect, useMemo, useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,7 @@ type FilterState = {
   area: string
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -240,6 +240,14 @@ export default function SearchPage() {
         </section>
       </main>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">読み込み中...</div>}>
+      <SearchPageContent />
+    </Suspense>
   )
 }
 
