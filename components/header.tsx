@@ -35,7 +35,7 @@ export default function Header() {
             マイページ
           </Link>
           <Link
-            href="#"
+            href="/help"
             className="text-sm text-muted-foreground hover:text-foreground transition-all hover:scale-105"
           >
             ヘルプ

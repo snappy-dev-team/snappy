@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import Header from '@/components/header'
 import { clearSessionUser, getSessionUser } from '@/lib/auth'
 import { listUsers, UserRecord } from '@/lib/users'
-import { CalendarRange, Heart, LogOut, MessageCircle, Sparkles, Star } from 'lucide-react'
+import { CalendarRange, Heart, LogOut, Sparkles, Star } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -120,14 +120,6 @@ export default function MyPage() {
                 編集
               </Button>
               <Button
-                variant="secondary"
-                size="sm"
-                className="bg-secondary text-secondary-foreground shadow-md hover:shadow-lg"
-                onClick={() => router.push('/messages')}
-              >
-                メッセージ
-              </Button>
-              <Button
                 variant="outline"
                 size="sm"
                 className="border-primary text-primary shadow-md hover:shadow-lg"
@@ -159,7 +151,6 @@ export default function MyPage() {
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: '予約管理', desc: 'スケジュールと予約管理', icon: CalendarRange, action: () => router.push('/bookings') },
-            { label: 'メッセージ', desc: 'やりとり履歴', icon: MessageCircle, action: () => router.push('/messages') },
             { label: 'お気に入り', desc: '保存したサロン・モデル', icon: Heart, action: () => router.push('/favorites') },
           ].map(item => (
             <button
