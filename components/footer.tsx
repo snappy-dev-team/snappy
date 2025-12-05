@@ -30,8 +30,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/how-to-use" className="text-muted-foreground hover:text-primary transition-colors">
                   使い方
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="text-muted-foreground hover:text-primary transition-colors">
+                  ヘルプ / FAQ
                 </Link>
               </li>
             </ul>
@@ -74,9 +79,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSddRKz5uxefdsD7cWUGDN_AH7VIitiePk4g6Dvznzv71hAJHA/viewform?usp=dialog"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
                   お問い合わせ
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

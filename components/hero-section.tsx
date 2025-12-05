@@ -27,16 +27,16 @@ export default function HeroSection() {
           <div>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight text-balance">
               <span className="bg-linear-to-r from-pink-500 via-purple-500 to-indigo-600 bg-clip-text text-transparent animate-gradient">
-                モデルを身近に
+                モデル募集を、もっと身近に。
               </span>
             </h1>
             <p className="text-lg md:text-xl font-medium text-muted-foreground mt-2">
-              カットモデル募集を、もっと気軽に、もっと自由に。
+              カットモデル・撮影モデルの募集や応募を、スムーズに管理できるマッチングプラットフォーム。
             </p>
           </div>
 
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-lg">
-            美容師さん・サロンと、モデルになりたいあなたをつなぐマッチングサービスです。条件やエリア、日時から、あなたにぴったりの募集を探せます。
+            美容師さん・サロンと、モデルになりたい方をつなぐサービスです。エリアや日時、スタイル条件から最適な募集を探し、チャットで調整まで完結します。
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -48,13 +48,15 @@ export default function HeroSection() {
                 無料で始める
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full px-12 py-6 text-lg font-semibold border-primary text-primary hover:bg-primary-light"
-            >
-              サービスの使い方を見る
-            </Button>
+            <Link href="/how-to-use">
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full px-12 py-6 text-lg font-semibold border-primary text-primary hover:bg-primary-light"
+              >
+                サービスの使い方を見る
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
