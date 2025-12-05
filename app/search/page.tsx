@@ -23,7 +23,7 @@ function SearchPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const initialTab = searchParams.get('tab') === 'clients' ? 'clients' : 'models'
+  const initialTab = searchParams.get('tab') === 'models' ? 'models' : 'clients'
   const [activeTab, setActiveTab] = useState<'models' | 'clients'>(initialTab)
   const [filters, setFilters] = useState<FilterState>({
     keyword: searchParams.get('q') ?? '',
@@ -118,16 +118,16 @@ function SearchPageContent() {
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="grid w-full grid-cols-2 bg-transparent gap-2 p-0 h-auto mb-5">
               <TabsTrigger
-                value="models"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-semibold text-sm md:text-base transition-all shadow-sm"
-              >
-                モデルをお探しの方
-              </TabsTrigger>
-              <TabsTrigger
                 value="clients"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-semibold text-sm md:text-base transition-all shadow-sm"
               >
                 お仕事をお探しの方
+              </TabsTrigger>
+              <TabsTrigger
+                value="models"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-semibold text-sm md:text-base transition-all shadow-sm"
+              >
+                モデルをお探しの方
               </TabsTrigger>
             </TabsList>
           </Tabs>
