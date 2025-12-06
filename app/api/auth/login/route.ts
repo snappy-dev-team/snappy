@@ -5,13 +5,25 @@ import { NextResponse } from 'next/server'
 type StoredUser = {
   id: number
   createdAt: string
-  name: string
-  email: string
-  passwordHash: string
-  age?: number
-  profile?: string
   role?: 'model' | 'client'
-  image?: string
+  email?: string
+  passwordHash?: string
+  model_signup_name?: string
+  model_signup_email?: string
+  model_signup_birthdate?: string
+  model_signup_address?: string
+  client_type?: 'individual' | 'corporation'
+  client_company_or_personal_name?: string
+  client_contact_name?: string
+  client_contact_gender?: 'male' | 'female' | 'other'
+  client_address?: string
+  client_email?: string
+  client_phone?: string
+  client_student_plan?: boolean
+  client_student_id_image?: string
+  student_account_status?: 'pending' | 'approved' | 'rejected'
+  model_profile?: Record<string, unknown>
+  client_profile?: Record<string, unknown>
 }
 
 type LoginPayload = {
@@ -42,7 +54,9 @@ export async function POST(req: Request) {
     const normalizedEmail = body.email.trim().toLowerCase()
     const user = users.find(
       item =>
-        item.email?.trim().toLowerCase() === normalizedEmail &&
+        (item.email?.trim().toLowerCase() === normalizedEmail ||
+          item.model_signup_email?.trim().toLowerCase() === normalizedEmail ||
+          item.client_email?.trim().toLowerCase() === normalizedEmail) &&
         (body.role ? item.role === body.role : true),
     )
 

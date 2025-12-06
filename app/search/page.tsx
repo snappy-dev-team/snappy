@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, FormEvent, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -76,10 +77,13 @@ function SearchPageContent() {
     const areaLabel = filters.area ? areaLabelMap[filters.area] ?? '' : ''
     return users
       .filter(user => (user.role ?? 'model') === 'model')
+      .filter(user => (user.model_profile as any)?.model_profile_visibility !== 'private')
       .filter(user => {
-        const haystack = `${user.name} ${user.email} ${user.profile ?? ''}`.toLowerCase()
+        const profile = user.model_profile as any
+        const displayName = profile?.model_display_name || user.model_signup_name || user.name || ''
+        const haystack = `${displayName} ${user.email} ${profile?.model_activity_area ?? ''} ${profile?.model_self_intro ?? ''}`.toLowerCase()
         const matchesKeyword = kw ? haystack.includes(kw) : true
-        const matchesArea = areaLabel ? (user.profile ?? '').includes(areaLabel) : true
+        const matchesArea = areaLabel ? (profile?.model_activity_area ?? '').includes(areaLabel) : true
         return matchesKeyword && matchesArea
       })
   }, [filters.area, filters.keyword, users])
@@ -90,9 +94,11 @@ function SearchPageContent() {
     return users
       .filter(user => user.role === 'client')
       .filter(user => {
-        const haystack = `${user.name} ${user.email} ${user.profile ?? ''}`.toLowerCase()
+        const profile = user.client_profile as any
+        const displayName = profile?.client_display_name || user.client_company_or_personal_name || user.name || ''
+        const haystack = `${displayName} ${user.email} ${profile?.client_address ?? ''}`.toLowerCase()
         const matchesKeyword = kw ? haystack.includes(kw) : true
-        const matchesArea = areaLabel ? (user.profile ?? '').includes(areaLabel) : true
+        const matchesArea = areaLabel ? (profile?.client_address ?? '').includes(areaLabel) : true
         return matchesKeyword && matchesArea
       })
   }, [filters.area, filters.keyword, users])
@@ -182,33 +188,26 @@ function SearchPageContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {activeTab === 'models'
               ? filteredModels.map(item => (
-                  <article
+                  <Link
                     key={item.id}
-                    className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-primary/10 p-4 space-y-3 hover:translate-y-[-2px] transition-transform"
+                    href={`/profile/${item.id}`}
+                    className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-lg font-semibold">{item.name}</h3>
-                      <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                        モデル
-                      </span>
+                    <div className="aspect-[4/5] bg-neutral-100">
+                      <img
+                        src={
+                          (item.model_profile as any)?.model_main_image ||
+                          'https://placehold.co/400x500?text=Profile'
+                        }
+                        alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground">
-                        {item.email}
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-primary/10 text-primary">
-                        {item.profile ? '自己紹介あり' : 'プロフィール未登録'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-foreground">{item.profile || '自己紹介はまだありません。'}</p>
-                    <p className="text-xs text-muted-foreground">登録日: {new Date(item.createdAt).toLocaleDateString()}</p>
-                    <Button variant="outline" size="sm" className="mt-1">
-                      詳細を見る
-                    </Button>
-                  </article>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
                 ))
               : filteredClients.map(item => (
                   <article
