@@ -1,9 +1,9 @@
 "use client"
 
-import { Button } from '@/components/ui/button'
 import Header from '@/components/header'
+import { Button } from '@/components/ui/button'
 import { clearSessionUser, getSessionUser } from '@/lib/auth'
-import { ClientProfile, fetchMetrics, ModelProfile, StudentAccountStatus, UserRecord, listUsers } from '@/lib/users'
+import { ClientProfile, ModelProfile, StudentAccountStatus, UserRecord, fetchMetrics, listUsers } from '@/lib/users'
 import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, UserCog } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -54,11 +54,13 @@ export default function MyPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserRecord | null>(null)
   const [loading, setLoading] = useState(true)
-  const [metrics, setMetrics] = useState<{ dynamic_match_count: number; dynamic_review_count: number; dynamic_review_rating: number }>({
-    dynamic_match_count: 0,
-    dynamic_review_count: 0,
-    dynamic_review_rating: 0,
-  })
+  const [metrics, setMetrics] = useState<{ dynamic_match_count: number; dynamic_review_count: number; dynamic_review_rating: number }>(
+    {
+      dynamic_match_count: 0,
+      dynamic_review_count: 0,
+      dynamic_review_rating: 0,
+    },
+  )
   const [modelProfile, setModelProfile] = useState<ModelProfile>(emptyModelProfile)
   const [clientProfile, setClientProfile] = useState<ClientProfile>(emptyClientProfile)
   const [error, setError] = useState<string | null>(null)
@@ -151,9 +153,7 @@ export default function MyPage() {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">{profileName}</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isModel ? 'モデル会員' : 'クライアント会員'}
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">{isModel ? 'モデル会員' : 'クライアント会員'}</p>
                 {!isModel && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <ShieldCheck className="size-3 text-primary" />
@@ -192,11 +192,11 @@ export default function MyPage() {
         <section className="rounded-2xl border border-border bg-white shadow-sm p-6 md:p-8 space-y-6">
           <div className="flex items-center gap-2">
             <UserCog className="size-4 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">各種編集・登録</h2>
+            <h2 className="text-xl font-semibold text-foreground">プロフィール編集・登録</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button className="w-full justify-between" onClick={() => router.push('/mypage/profile/edit')}>
-              プロフィール編集へ
+              プロフィール編集
               <span className="text-xs text-primary-foreground/90">詳細入力・画像登録</span>
             </Button>
             {isModel ? (

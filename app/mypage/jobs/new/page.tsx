@@ -85,42 +85,42 @@ const emptyStudentForm: StudentForm = {
 
 const labels: Record<string, string> = {
   job_title_general: 'タイトル',
-  job_purpose_general: '目皁E,
+  job_purpose_general: '目的',
   job_genre_general: 'ジャンル',
   job_number_general: '人数',
-  job_salon_name_general: '店�E吁E,
-  job_salon_area_general: '店�Eエリア',
-  job_nearest_station_general: '最寁E��駁E,
-  job_salon_mood_general: '店�Eの雰囲氁E,
-  job_stylist_name_general: '拁E��スタイリスト名',
+  job_salon_name_general: '店名',
+  job_salon_area_general: '店名エリア',
+  job_nearest_station_general: '最寄り駅',
+  job_salon_mood_general: '店の雰囲気',
+  job_stylist_name_general: '担当スタイリスト名',
   job_salon_sns_general: 'サロンSNS',
-  job_portfolio_images_general: '画像URL�E�カンマ区刁E���E�E,
-  job_model_gender: 'モチE��の性別条件',
+  job_portfolio_images_general: '画像URL（カンマ区切り）',
+  job_model_gender: 'モデルの性別条件',
   job_model_age_range: '年齢・年代',
   job_model_hair_conditions: '髪の条件',
-  job_model_face_visibility: '顔�Eし篁E��',
-  job_model_experience: '経騁E,
-  job_model_other_conditions: 'そ�E他条件',
-  job_service_contents: '施術�E容',
+  job_model_face_visibility: '顔出し範囲',
+  job_model_experience: '経験',
+  job_model_other_conditions: 'その他条件',
+  job_service_contents: '施術内容',
   job_style_after: '施術後スタイル',
-  job_required_time: '所要時閁E,
-  job_dress_makeup: '服裁E�Eメイク',
+  job_required_time: '所要時間',
+  job_dress_makeup: '服装・メイク',
   job_staff_count: '同伴・撮影人数',
-  job_reward_type: '報酬区刁E��有斁E無料！E,
-  job_reward_cash: '報酬金顁E,
+  job_reward_type: '報酬区分（有償/無料など）',
+  job_reward_cash: '報酬金額',
   job_reward_transport: '交通費支給',
   job_reward_details: '報酬詳細',
-  job_date_candidates: '日付候裁E,
+  job_date_candidates: '日付候補',
   job_time_range: '時間帯',
   job_shoot_location: '撮影場所',
-  job_meeting_point: '雁E��場所',
-  job_photo_usage_scope: '写真の使用篁E��',
+  job_meeting_point: '集合場所',
+  job_photo_usage_scope: '写真の使用範囲',
   job_title_student: '募集タイトル',
-  job_purpose_student: '目皁E,
+  job_purpose_student: '目的',
   job_genre_student: 'ジャンル',
   job_number_student: '人数',
-  job_stylist_name_student: 'スタイリスト名�E�代表老E���E�E,
-  job_school_name_student: '学校吁E,
+  job_stylist_name_student: 'スタイリスト名（代表可）',
+  job_school_name_student: '学校名',
   job_location_address_student: '施術場所住所',
   job_sns_student: 'SNS',
 }
@@ -159,7 +159,7 @@ function JobNewContent() {
         const payload: JobStudentPayload = { ...studentForm, account_type: 'student' }
         await createJob(payload)
         setStudentForm({ ...emptyStudentForm, client_id: user.id })
-        setMessage('学生アカウント�E仕事募雁E��登録しました、E)
+        setMessage('学生アカウントの仕事募集を登録しました。')
       } else {
         const payload: JobGeneralPayload = {
           ...generalForm,
@@ -170,11 +170,11 @@ function JobNewContent() {
         }
         await createJob(payload)
         setGeneralForm({ ...emptyGeneralForm, client_id: user.id })
-        setMessage('一般アカウント�E仕事募雁E��登録しました、E)
+        setMessage('一般アカウントの仕事募集を登録しました。')
       }
     } catch (err) {
       console.error(err)
-      setError('仕事募雁E�E登録に失敗しました、E)
+      setError('仕事募集の登録に失敗しました。')
     }
   }
 
@@ -208,18 +208,20 @@ function JobNewContent() {
       <main className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">仕事募雁E��加</p>
+            <p className="text-sm text-muted-foreground">仕事募集の追加</p>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              {isStudent ? '仕事募雁E��学生アカウント！E : '仕事募雁E��一般アカウント！E}
+              {isStudent ? '仕事募集（学生アカウント）' : '仕事募集（一般アカウント）'}
             </h1>
             {isStudent && (
               <p className="text-xs text-muted-foreground mt-1">
-                学生スチE�Eタス: {studentStatus}�E�Epproved でなぁE��合�E入力できません�E�E              </p>
+                学生ステータス: {studentStatus}（approved でない場合は入力できません）
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => router.push('/mypage')}>
-              マイペ�Eジへ戻めE            </Button>
+              マイページへ戻る
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -230,7 +232,8 @@ function JobNewContent() {
               }}
             >
               <LogOut className="size-4" />
-              ログアウチE            </Button>
+              ログアウト
+            </Button>
           </div>
         </div>
 
