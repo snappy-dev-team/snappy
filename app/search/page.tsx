@@ -188,54 +188,78 @@ function SearchPageContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {activeTab === 'models'
-              ? filteredModels.map(item => (
-                  <Link
+          {activeTab === 'models' ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredModels.map(item => (
+                <Link
+                  key={item.id}
+                  href={`/profile/${item.id}`}
+                  className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
+                >
+                  <div className="aspect-[4/5] bg-neutral-100">
+                    <img
+                      src={
+                        (item.model_profile as any)?.model_main_image ||
+                        'https://placehold.co/400x500?text=Profile'
+                      }
+                      alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredClients.map(item => {
+                const profile = item.client_profile as any
+                const displayName =
+                  profile?.client_display_name || item.client_company_or_personal_name || item.name || '店舗名未設定'
+                const area = profile?.client_address || 'エリア未設定'
+                const description =
+                  item.profile ||
+                  profile?.client_company_or_personal_name ||
+                  '募集概要はまだ登録されていません。'
+                const image = profile?.client_student_id_image
+
+                return (
+                  <article
                     key={item.id}
-                    href={`/profile/${item.id}`}
-                    className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
+                    className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:translate-y-[-2px] transition-transform"
                   >
-                    <div className="aspect-[4/5] bg-neutral-100">
+                    <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
                       <img
-                        src={
-                          (item.model_profile as any)?.model_main_image ||
-                          'https://placehold.co/400x500?text=Profile'
-                        }
-                        alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
+                        src={image || 'https://placehold.co/320x200?text=Shop'}
+                        alt={displayName}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
-                ))
-              : filteredClients.map(item => (
-                  <article
-                    key={item.id}
-                    className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 space-y-3 hover:translate-y-[-2px] transition-transform"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-lg font-semibold">{item.name}</h3>
-                      <span className="text-xs px-3 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20">
-                        募集中
-                      </span>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <p className="text-xs text-muted-foreground">募集中</p>
+                          <h3 className="text-lg font-semibold leading-tight line-clamp-2">{displayName}</h3>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                        </div>
+                        <Button variant="outline" size="sm" className="shrink-0">
+                          募集を見る
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
+                          {area}
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
+                          登録日: {new Date(item.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground">
-                        {item.email}
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary">
-                        {item.profile ? '募集内容あり' : '募集内容未登録'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-foreground">{item.profile || '募集内容はまだありません。'}</p>
-                    <p className="text-xs text-muted-foreground">登録日: {new Date(item.createdAt).toLocaleDateString()}</p>
-                    <Button variant="outline" size="sm" className="mt-1">
-                      募集を見る
-                    </Button>
                   </article>
-                ))}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </section>
       </main>
     </div>

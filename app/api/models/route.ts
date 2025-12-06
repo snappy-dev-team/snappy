@@ -1,6 +1,20 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
 
+type ModelProfile = {
+  model_display_name?: string
+  model_birthdate?: string
+  model_gender?: string
+  model_activity_area?: string
+  model_height?: string
+  model_body_type?: string
+  model_hair_style?: string
+  model_job_category?: string
+  model_hobbies?: string
+  model_main_image?: string
+  model_profile_visibility?: 'public' | 'private'
+}
+
 type StoredUser = {
   id: number | string
   name: string
@@ -12,15 +26,39 @@ type StoredUser = {
   location?: string
   rating?: number
   tags?: string[]
+  model_profile?: ModelProfile
 }
 
 const redis = Redis.fromEnv()
 const USERS_KEY = 'users'
 
+const requiredProfileKeys: (keyof ModelProfile)[] = [
+  'model_display_name',
+  'model_birthdate',
+  'model_gender',
+  'model_activity_area',
+  'model_height',
+  'model_body_type',
+  'model_hair_style',
+  'model_job_category',
+  'model_hobbies',
+  'model_main_image',
+]
+
+const hasCompletedProfile = (profile?: ModelProfile) =>
+  Boolean(
+    profile &&
+      profile.model_profile_visibility !== 'private' &&
+      requiredProfileKeys.every((key) => {
+        const value = profile[key]
+        return typeof value === 'string' ? value.trim().length > 0 : Boolean(value)
+      }),
+  )
+
 export async function GET() {
   try {
     const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
-    const models = users.filter((u) => u.role === 'model')
+    const models = users.filter((u) => u.role === 'model' && hasCompletedProfile(u.model_profile))
     return NextResponse.json(models)
   } catch (error) {
     console.error('Models fetch failed', error)
