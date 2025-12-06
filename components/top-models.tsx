@@ -2,15 +2,32 @@
 
 import { Card } from '@/components/ui/card'
 import { ChevronLeft, ChevronRight, Star, User } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+
+type ModelProfile = {
+  model_display_name?: string
+  model_birthdate?: string
+  model_activity_area?: string
+}
 
 type Model = {
   id: number | string
-  name: string
+  name?: string
   age?: number
   location?: string
   rating?: number
   tags?: string[]
+  model_profile?: ModelProfile
+  [key: string]: unknown
+}
+
+const calcAge = (isoDate?: string) => {
+  if (!isoDate) return undefined
+  const birth = new Date(isoDate)
+  if (Number.isNaN(birth.getTime())) return undefined
+  const diff = Date.now() - birth.getTime()
+  const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25))
+  return years > 0 ? years : undefined
 }
 
 export default function TopModels() {
@@ -47,6 +64,19 @@ export default function TopModels() {
   }
 
   const hasModels = models.length > 0
+  const normalizedModels = useMemo(
+    () =>
+      models.map((model) => {
+        const ageFromBirth = calcAge(model.model_profile?.model_birthdate as string | undefined)
+        return {
+          ...model,
+          displayName: (model.model_profile?.model_display_name as string | undefined)?.trim() || (model.name as string | undefined) || '名前未設定',
+          activityArea: (model.model_profile?.model_activity_area as string | undefined) || (model.location as string | undefined) || '場所不明',
+          displayAge: ageFromBirth ?? model.age,
+        }
+      }),
+    [models],
+  )
 
   return (
     <section className="py-10 md:py-12 px-4 md:px-8">
@@ -93,7 +123,7 @@ export default function TopModels() {
                 className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
                 style={{ scrollBehavior: 'smooth' }}
               >
-                {models.map((model) => (
+                {normalizedModels.map((model) => (
                   <Card
                     key={model.id}
                     className="shrink-0 w-40 md:w-44 p-4 rounded-2xl border-border hover:shadow-md transition-shadow cursor-pointer"
@@ -105,11 +135,9 @@ export default function TopModels() {
                     {/* Model Info */}
                     <div className="space-y-2">
                       <div>
-                        <p className="font-semibold text-foreground text-sm truncate">
-                          {model.name}
-                        </p>
+                        <p className="font-semibold text-foreground text-sm truncate">{model.displayName}</p>
                         <p className="text-xs text-muted-foreground">
-                          {model.age ? `${model.age}歳` : '年齢不明'} / {model.location ?? '場所不明'}
+                          {model.displayAge ? `${model.displayAge}歳` : '年齢不明'} / {model.activityArea}
                         </p>
                       </div>
 
@@ -119,7 +147,7 @@ export default function TopModels() {
                           <Star
                             key={i}
                             className={`w-3.5 h-3.5 ${
-                              i < Math.floor(model.rating ?? 0)
+                              i < Math.floor((model.rating as number | undefined) ?? 0)
                                 ? 'fill-accent text-accent'
                                 : 'text-border'
                             }`}
@@ -131,10 +159,10 @@ export default function TopModels() {
                       <div className="flex flex-wrap gap-1 pt-1">
                         {(model.tags ?? []).map((tag) => (
                           <span
-                            key={tag}
+                            key={tag as string}
                             className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium"
                           >
-                            {tag}
+                            {tag as string}
                           </span>
                         ))}
                       </div>
