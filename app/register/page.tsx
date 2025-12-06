@@ -12,6 +12,7 @@ type FormState = {
   name: string
   age: string
   email: string
+  password: string
   phone: string
   location: string
   studio: string
@@ -32,6 +33,7 @@ function RegisterForm() {
     name: '',
     age: '',
     email: '',
+    password: '',
     phone: '',
     location: '',
     studio: '',
@@ -58,14 +60,21 @@ function RegisterForm() {
     setError(null)
     setSubmitting(true)
 
+    if (formData.password.length < 8) {
+      setError('パスワードは8文字以上で入力してください。')
+      setSubmitting(false)
+      return
+    }
+
     const payload: UserPayload = {
       role: isModel ? 'model' : 'client',
       name: isModel ? formData.name : formData.studio || formData.name,
       email: formData.email,
+      password: formData.password,
       age: isModel && formData.age ? Number(formData.age) : undefined,
       profile: isModel
-        ? `希望スタッフ:${formData.staffGender || '未設定'} / 予算:${formData.budget || '未設定'} / カード:${formData.acceptCard ? '可' : '不明'}`
-        : `サロン:${formData.studio || '未設定'} / 経験:${formData.experience || '未設定'} / スタッフ構成:${formData.staffGender || '未設定'} / カード:${formData.acceptCard ? '可' : '不明'}`,
+        ? `希望スタイリスト:${formData.staffGender || '未設定'} / 予算:${formData.budget || '未設定'} / カード:${formData.acceptCard ? '可' : '不可'}`
+        : `サロン:${formData.studio || '未設定'} / 経験:${formData.experience || '未設定'} / スタッフ構成:${formData.staffGender || '未設定'} / カード:${formData.acceptCard ? '可' : '不可'}`,
     }
 
     try {
@@ -92,7 +101,7 @@ function RegisterForm() {
           <p className="text-muted-foreground">
             {isModel
               ? 'カットモデルとして登録してください。無料でご利用いただけます。'
-              : 'サロンやサービスを登録して、モデルを探しましょう。'}
+              : 'サロンの募集要項を登録して、モデルを探しましょう。'}
           </p>
         </div>
 
@@ -159,6 +168,21 @@ function RegisterForm() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="example@email.com"
+                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  パスワード <span className="text-secondary">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="8文字以上のパスワード"
                   className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 />
@@ -314,6 +338,21 @@ function RegisterForm() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
+                  パスワード <span className="text-secondary">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="8文字以上のパスワード"
+                  className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
                   電話番号 <span className="text-secondary">*</span>
                 </label>
                 <input
@@ -345,7 +384,7 @@ function RegisterForm() {
                       <option value="">選択してください</option>
                       <option value="female">女性スタッフのみ</option>
                       <option value="male">男性スタッフのみ</option>
-                      <option value="mixed">男女混合</option>
+                      <option value="mixed">男女混在</option>
                     </select>
                   </div>
 
@@ -358,7 +397,7 @@ function RegisterForm() {
                         onChange={handleChange}
                         className="w-4 h-4 rounded border-border"
                       />
-                      <span className="text-sm text-foreground">クレジットカード決済に対応している</span>
+                      <span className="text-sm text-foreground">クレジットカード決済に対応しています</span>
                     </label>
                   </div>
 

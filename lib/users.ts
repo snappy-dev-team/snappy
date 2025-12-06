@@ -12,6 +12,7 @@ export type UserRecord = {
 export type UserPayload = {
   name: string
   email: string
+  password: string
   age?: number
   profile?: string
   role?: 'model' | 'client'
@@ -56,4 +57,23 @@ export async function findUserByEmail(email: string, role?: 'model' | 'client'):
         (role ? user.role === role : true),
     ) ?? null
   )
+}
+
+export async function loginUser(email: string, password: string, role?: 'model' | 'client'): Promise<UserRecord> {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify({ email, password, role }),
+  })
+
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) {
+    const message =
+      data?.error === 'invalid_credentials'
+        ? 'メールアドレスまたはパスワードが違います'
+        : data?.error ?? 'ログインに失敗しました'
+    throw new Error(message)
+  }
+
+  return data.user as UserRecord
 }
