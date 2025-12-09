@@ -220,7 +220,7 @@ function SearchPageContent() {
                     href={`/profile/${item.id}`}
                     className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
                   >
-                    <div className="aspect-[4/5] bg-neutral-100">
+                    <div className="aspect-4/5 bg-neutral-100">
                       <img
                         src={
                           (item.model_profile as any)?.model_main_image ||
@@ -230,7 +230,7 @@ function SearchPageContent() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
                 ))}
               </div>
@@ -264,7 +264,7 @@ function SearchPageContent() {
                   return (
                     <article
                       key={item.id}
-                      className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:translate-y-[-2px] transition-transform"
+                      className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:-translate-y-0.5 transition-transform"
                     >
                       <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
                         <img
