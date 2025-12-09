@@ -199,75 +199,105 @@ function SearchPageContent() {
           </div>
 
           {activeTab === 'models' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredModels.map(item => (
-                <Link
-                  key={item.id}
-                  href={`/profile/${item.id}`}
-                  className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
-                >
-                  <div className="aspect-[4/5] bg-neutral-100">
-                    <img
-                      src={
-                        (item.model_profile as any)?.model_main_image ||
-                        'https://placehold.co/400x500?text=Profile'
-                      }
-                      alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredClients.map(item => {
-                const profile = item.client_profile as any
-                const displayName =
-                  profile?.client_display_name || item.client_company_or_personal_name || item.name || '店舗名未設定'
-                const area = profile?.client_address || item.client_address || 'エリア未設定'
-                const description =
-                  profile?.client_company_or_personal_name ||
-                  '募集概要はまだ登録されていません。'
-                const image = profile?.client_student_id_image
-
-                return (
-                  <article
+            filteredModels.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 mb-4 rounded-full bg-neutral-soft flex items-center justify-center">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">該当するモデルが見つかりませんでした</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  検索条件を変更して、もう一度お試しください。<br />
+                  エリアや年齢などの条件を広げると、より多くの結果が表示されます。
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredModels.map(item => (
+                  <Link
                     key={item.id}
-                    className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:translate-y-[-2px] transition-transform"
+                    href={`/profile/${item.id}`}
+                    className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
                   >
-                    <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
+                    <div className="aspect-[4/5] bg-neutral-100">
                       <img
-                        src={image || 'https://placehold.co/320x200?text=Shop'}
-                        alt={displayName}
+                        src={
+                          (item.model_profile as any)?.model_main_image ||
+                          'https://placehold.co/400x500?text=Profile'
+                        }
+                        alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1 min-w-0">
-                          <p className="text-xs text-muted-foreground">募集中</p>
-                          <h3 className="text-lg font-semibold leading-tight line-clamp-2">{displayName}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                ))}
+              </div>
+            )
+          ) : (
+            filteredClients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 mb-4 rounded-full bg-neutral-soft flex items-center justify-center">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">該当するお仕事が見つかりませんでした</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  検索条件を変更して、もう一度お試しください。<br />
+                  エリアや日時などの条件を広げると、より多くの結果が表示されます。
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredClients.map(item => {
+                  const profile = item.client_profile as any
+                  const displayName =
+                    profile?.client_display_name || item.client_company_or_personal_name || item.name || '店舗名未設定'
+                  const area = profile?.client_address || item.client_address || 'エリア未設定'
+                  const description =
+                    profile?.client_company_or_personal_name ||
+                    '募集概要はまだ登録されていません。'
+                  const image = profile?.client_student_id_image
+
+                  return (
+                    <article
+                      key={item.id}
+                      className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:translate-y-[-2px] transition-transform"
+                    >
+                      <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
+                        <img
+                          src={image || 'https://placehold.co/320x200?text=Shop'}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 min-w-0">
+                            <p className="text-xs text-muted-foreground">募集中</p>
+                            <h3 className="text-lg font-semibold leading-tight line-clamp-2">{displayName}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                          </div>
+                          <Button variant="outline" size="sm" className="shrink-0">
+                            募集を見る
+                          </Button>
                         </div>
-                        <Button variant="outline" size="sm" className="shrink-0">
-                          募集を見る
-                        </Button>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
+                            {area}
+                          </span>
+                          <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
+                            登録日: {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
-                          {area}
-                        </span>
-                        <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
-                          登録日: {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )
           )}
         </section>
       </main>
