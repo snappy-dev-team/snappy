@@ -434,7 +434,7 @@ export default function SearchPanel({
 
   return (
     <div className="relative px-4 md:px-8 pb-12">
-      <div className="max-w-4xl mx-auto -mt-6 md:-mt-10">
+      <div className="max-w-4xl mx-auto mt-4 md:-mt-10">
         <div className="bg-white rounded-2xl shadow-lg p-5 md:p-6 border border-border">
           {tabsContent}
         </div>
