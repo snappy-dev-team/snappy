@@ -59,15 +59,10 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* 会社情報 */}
+          {/* ご利用案内 */}
           <div>
-            <h4 className="text-foreground font-semibold mb-4">会社情報</h4>
+            <h4 className="text-foreground font-semibold mb-4">ご利用案内</h4>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                  運営会社
-                </Link>
-              </li>
               <li>
                 <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
                   利用規約
