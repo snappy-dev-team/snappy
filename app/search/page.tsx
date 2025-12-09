@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState, FormEvent, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/header'
+import SearchPanel from '@/components/search-panel'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { listUsers, UserRecord } from '@/lib/users'
 
 const areaLabelMap: Record<string, string> = {
@@ -13,34 +13,81 @@ const areaLabelMap: Record<string, string> = {
   omotesando: '表参道',
   shinjuku: '新宿',
   tokyo: '東京',
+  osaka: '大阪',
+  nagoya: '名古屋',
 }
 
-type FilterState = {
-  keyword: string
-  area: string
+const hairStyleLabelMap: Record<string, string> = {
+  straight: 'ストレート',
+  wave: 'ウェーブ',
+  curly: 'くせ毛',
+  other: 'その他',
+}
+
+const genderLabelMap: Record<string, string> = {
+  female: '女性',
+  male: '男性',
+  other: 'その他',
+}
+
+// Helper to calculate age from birthdate
+const calculateAge = (birthdate: string): number => {
+  if (!birthdate) return 0
+  const birth = new Date(birthdate)
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  return age
+}
+
+// Helper to check if age is in range
+const isAgeInRange = (age: number, range: string): boolean => {
+  if (!range) return true
+  switch (range) {
+    case '18-20':
+      return age >= 18 && age <= 20
+    case '20-25':
+      return age >= 20 && age <= 25
+    case '25-30':
+      return age >= 25 && age <= 30
+    case '30-35':
+      return age >= 30 && age <= 35
+    case '35+':
+      return age >= 35
+    default:
+      return true
+  }
 }
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
 
-  const initialTab = searchParams.get('tab') === 'models' ? 'models' : 'clients'
-  const [activeTab, setActiveTab] = useState<'models' | 'clients'>(initialTab)
-  const [filters, setFilters] = useState<FilterState>({
-    keyword: searchParams.get('q') ?? '',
-    area: searchParams.get('area') ?? '',
-  })
+  const initialTab = searchParams.get('tab') === 'models' ? 'models' : 'jobs'
+  const [activeTab, setActiveTab] = useState<'models' | 'jobs'>(initialTab)
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // フィルター値をURLパラメータから取得
+  const filters = useMemo(() => ({
+    keyword: searchParams.get('q') ?? '',
+    area: searchParams.get('area') ?? '',
+    age: searchParams.get('age') ?? '',
+    hair: searchParams.get('hair') ?? '',
+    gender: searchParams.get('gender') ?? '',
+    category: searchParams.get('category') ?? '',
+  }), [searchParams])
+
   useEffect(() => {
-    setFilters({
-      keyword: searchParams.get('q') ?? '',
-      area: searchParams.get('area') ?? '',
-    })
     const tabParam = searchParams.get('tab')
-    if (tabParam === 'clients' || tabParam === 'models') setActiveTab(tabParam)
+    if (tabParam === 'clients') {
+      setActiveTab('jobs')
+    } else if (tabParam === 'models') {
+      setActiveTab('models')
+    }
   }, [searchParams])
 
   useEffect(() => {
@@ -53,28 +100,12 @@ function SearchPageContent() {
       .finally(() => setLoading(false))
   }, [])
 
-  const syncQuery = (nextTab: 'models' | 'clients', nextFilters = filters) => {
-    const params = new URLSearchParams()
-    params.set('tab', nextTab)
-    if (nextFilters.keyword) params.set('q', nextFilters.keyword)
-    if (nextFilters.area) params.set('area', nextFilters.area)
-    router.replace(`/search?${params.toString()}`)
-  }
-
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    syncQuery(activeTab)
-  }
-
-  const handleTabChange = (value: string) => {
-    const nextTab = value === 'clients' ? 'clients' : 'models'
-    setActiveTab(nextTab)
-    syncQuery(nextTab)
-  }
-
   const filteredModels = useMemo(() => {
     const kw = filters.keyword.trim().toLowerCase()
-    const areaLabel = filters.area ? areaLabelMap[filters.area] ?? '' : ''
+    const areaLabel = filters.area ? areaLabelMap[filters.area] ?? filters.area : ''
+    const hairLabel = filters.hair ? hairStyleLabelMap[filters.hair] ?? filters.hair : ''
+    const genderLabel = filters.gender ? genderLabelMap[filters.gender] ?? filters.gender : ''
+
     return users
       .filter(user => (user.role ?? 'model') === 'model')
       .filter(user => (user.model_profile as any)?.model_profile_visibility !== 'private')
@@ -82,15 +113,37 @@ function SearchPageContent() {
         const profile = user.model_profile as any
         const displayName = profile?.model_display_name || user.model_signup_name || user.name || ''
         const haystack = `${displayName} ${user.email} ${profile?.model_activity_area ?? ''} ${profile?.model_self_intro ?? ''}`.toLowerCase()
+        
+        // Keyword filter
         const matchesKeyword = kw ? haystack.includes(kw) : true
+        
+        // Area filter
         const matchesArea = areaLabel ? (profile?.model_activity_area ?? '').includes(areaLabel) : true
-        return matchesKeyword && matchesArea
+        
+        // Age filter
+        const birthdate = profile?.model_birthdate || user.model_signup_birthdate || ''
+        const age = calculateAge(birthdate)
+        const matchesAge = filters.age ? isAgeInRange(age, filters.age) : true
+        
+        // Hair style filter
+        const userHairStyle = profile?.model_hair_style ?? ''
+        const matchesHair = hairLabel ? userHairStyle.includes(hairLabel) : true
+        
+        // Gender filter
+        const userGender = profile?.model_gender ?? ''
+        const matchesGender = genderLabel ? userGender === genderLabel || userGender === filters.gender : true
+        
+        // Category filter (job_category)
+        const jobCategory = profile?.model_job_category ?? ''
+        const matchesCategory = filters.category ? jobCategory.toLowerCase().includes(filters.category.toLowerCase()) : true
+
+        return matchesKeyword && matchesArea && matchesAge && matchesHair && matchesGender && matchesCategory
       })
-  }, [filters.area, filters.keyword, users])
+  }, [filters, users])
 
   const filteredClients = useMemo(() => {
     const kw = filters.keyword.trim().toLowerCase()
-    const areaLabel = filters.area ? areaLabelMap[filters.area] ?? '' : ''
+    const areaLabel = filters.area ? areaLabelMap[filters.area] ?? filters.area : ''
     return users
       .filter(user => user.role === 'client')
       .filter(user => {
@@ -101,7 +154,11 @@ function SearchPageContent() {
         const matchesArea = areaLabel ? (profile?.client_address ?? '').includes(areaLabel) : true
         return matchesKeyword && matchesArea
       })
-  }, [filters.area, filters.keyword, users])
+  }, [filters, users])
+
+  const handleTabChange = (tab: 'models' | 'jobs') => {
+    setActiveTab(tab)
+  }
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
@@ -121,59 +178,12 @@ function SearchPageContent() {
         </header>
 
         <section className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-xl shadow-primary/10 p-5 md:p-6">
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="grid w-full grid-cols-2 bg-transparent gap-2 p-0 h-auto mb-5">
-              <TabsTrigger
-                value="clients"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-semibold text-sm md:text-base transition-all shadow-sm"
-              >
-                お仕事をお探しの方
-              </TabsTrigger>
-              <TabsTrigger
-                value="models"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-semibold text-sm md:text-base transition-all shadow-sm"
-              >
-                モデルをお探しの方
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-3 items-end">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs md:text-sm font-semibold text-foreground">キーワード</label>
-              <input
-                value={filters.keyword}
-                onChange={e => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
-                placeholder="例: カラー / 撮影 / 土日"
-                className="w-full px-4 py-2.5 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary shadow-inner bg-white/80"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs md:text-sm font-semibold text-foreground">エリア</label>
-              <div className="relative">
-                <select
-                  value={filters.area}
-                  onChange={e => setFilters(prev => ({ ...prev, area: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                >
-                  <option value="">指定なし</option>
-                  <option value="shibuya">渋谷</option>
-                  <option value="omotesando">表参道</option>
-                  <option value="shinjuku">新宿</option>
-                  <option value="tokyo">東京</option>
-                </select>
-                <ChevronDownIcon />
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full md:w-auto bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground rounded-lg px-6 shadow-lg shadow-primary/20"
-            >
-              再検索
-            </Button>
-          </form>
+          <SearchPanel 
+            embedded 
+            initialTab={activeTab}
+            onTabChange={handleTabChange}
+            noContainer
+          />
         </section>
 
         <section className="space-y-3">
@@ -189,76 +199,105 @@ function SearchPageContent() {
           </div>
 
           {activeTab === 'models' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredModels.map(item => (
-                <Link
-                  key={item.id}
-                  href={`/profile/${item.id}`}
-                  className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
-                >
-                  <div className="aspect-[4/5] bg-neutral-100">
-                    <img
-                      src={
-                        (item.model_profile as any)?.model_main_image ||
-                        'https://placehold.co/400x500?text=Profile'
-                      }
-                      alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredClients.map(item => {
-                const profile = item.client_profile as any
-                const displayName =
-                  profile?.client_display_name || item.client_company_or_personal_name || item.name || '店舗名未設定'
-                const area = profile?.client_address || 'エリア未設定'
-                const description =
-                  item.profile ||
-                  profile?.client_company_or_personal_name ||
-                  '募集概要はまだ登録されていません。'
-                const image = profile?.client_student_id_image
-
-                return (
-                  <article
+            filteredModels.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 mb-4 rounded-full bg-neutral-soft flex items-center justify-center">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">該当するモデルが見つかりませんでした</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  検索条件を変更して、もう一度お試しください。<br />
+                  エリアや年齢などの条件を広げると、より多くの結果が表示されます。
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredModels.map(item => (
+                  <Link
                     key={item.id}
-                    className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:translate-y-[-2px] transition-transform"
+                    href={`/profile/${item.id}`}
+                    className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
                   >
-                    <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
+                    <div className="aspect-4/5 bg-neutral-100">
                       <img
-                        src={image || 'https://placehold.co/320x200?text=Shop'}
-                        alt={displayName}
+                        src={
+                          (item.model_profile as any)?.model_main_image ||
+                          'https://placehold.co/400x500?text=Profile'
+                        }
+                        alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1 min-w-0">
-                          <p className="text-xs text-muted-foreground">募集中</p>
-                          <h3 className="text-lg font-semibold leading-tight line-clamp-2">{displayName}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                    <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                ))}
+              </div>
+            )
+          ) : (
+            filteredClients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 mb-4 rounded-full bg-neutral-soft flex items-center justify-center">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">該当するお仕事が見つかりませんでした</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  検索条件を変更して、もう一度お試しください。<br />
+                  エリアや日時などの条件を広げると、より多くの結果が表示されます。
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredClients.map(item => {
+                  const profile = item.client_profile as any
+                  const displayName =
+                    profile?.client_display_name || item.client_company_or_personal_name || item.name || '店舗名未設定'
+                  const area = profile?.client_address || item.client_address || 'エリア未設定'
+                  const description =
+                    profile?.client_company_or_personal_name ||
+                    '募集概要はまだ登録されていません。'
+                  const image = profile?.client_student_id_image
+
+                  return (
+                    <article
+                      key={item.id}
+                      className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:-translate-y-0.5 transition-transform"
+                    >
+                      <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
+                        <img
+                          src={image || 'https://placehold.co/320x200?text=Shop'}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 min-w-0">
+                            <p className="text-xs text-muted-foreground">募集中</p>
+                            <h3 className="text-lg font-semibold leading-tight line-clamp-2">{displayName}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                          </div>
+                          <Button variant="outline" size="sm" className="shrink-0">
+                            募集を見る
+                          </Button>
                         </div>
-                        <Button variant="outline" size="sm" className="shrink-0">
-                          募集を見る
-                        </Button>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
+                            {area}
+                          </span>
+                          <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
+                            登録日: {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
-                          {area}
-                        </span>
-                        <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
-                          登録日: {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )
           )}
         </section>
       </main>
@@ -271,19 +310,5 @@ export default function SearchPage() {
     <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">読み込み中...</div>}>
       <SearchPageContent />
     </Suspense>
-  )
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   )
 }
