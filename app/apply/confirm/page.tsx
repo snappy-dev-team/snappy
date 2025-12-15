@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ type JobDetail = {
   job_title_student?: string
 }
 
-export default function ApplyConfirmPage() {
+function ApplyConfirmPage() {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -155,5 +155,13 @@ export default function ApplyConfirmPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function ApplyConfirmPageWithSuspense() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">読み込み中...</div>}>
+      <ApplyConfirmPage />
+    </Suspense>
   )
 }
