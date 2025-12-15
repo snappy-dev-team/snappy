@@ -132,6 +132,7 @@ function JobNewContent() {
   const isStudent = typeParam === 'student'
 
   const [user, setUser] = useState<UserRecord | null>(null)
+  const [isStudentAccount, setIsStudentAccount] = useState(false)
   const [studentStatus, setStudentStatus] = useState<StudentAccountStatus>('pending')
   const [generalForm, setGeneralForm] = useState<GeneralForm>(emptyGeneralForm)
   const [studentForm, setStudentForm] = useState<StudentForm>(emptyStudentForm)
@@ -145,6 +146,7 @@ function JobNewContent() {
       return
     }
     setUser(session)
+    setIsStudentAccount(Boolean(session.client_student_plan ?? session.client_profile?.client_student_plan))
     setStudentStatus((session.student_account_status ?? 'pending') as StudentAccountStatus)
     setGeneralForm(prev => ({ ...prev, client_id: session.id }))
     setStudentForm(prev => ({ ...prev, client_id: session.id }))
@@ -156,6 +158,10 @@ function JobNewContent() {
     setError(null)
     try {
       if (isStudent) {
+        if (!isStudentAccount) {
+          setError('学生アカウントのみ学生向け募集を作成できます。')
+          return
+        }
         const payload: JobStudentPayload = { ...studentForm, account_type: 'student' }
         await createJob(payload)
         setStudentForm({ ...emptyStudentForm, client_id: user.id })
@@ -179,7 +185,8 @@ function JobNewContent() {
   }
 
   const renderFields = () => {
-    const entries = Object.entries(isStudent ? studentForm : generalForm).filter(
+    const usingStudentForm = isStudent && isStudentAccount
+    const entries = Object.entries(usingStudentForm ? studentForm : generalForm).filter(
       ([key]) => key !== 'client_id' && key !== 'account_type',
     )
     return entries.map(([key, value]) => (
@@ -194,13 +201,15 @@ function JobNewContent() {
           }
           rows={2}
           className="w-full px-3 py-2 rounded-lg border border-border"
-          disabled={isStudent && studentStatus !== 'approved'}
+          disabled={(isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')}
         />
       </label>
     ))
   }
 
   if (!user) return null
+
+  const studentLocked = (isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')
 
   return (
     <div className="min-h-screen bg-white">
@@ -213,9 +222,10 @@ function JobNewContent() {
               {isStudent ? '仕事募集（学生アカウント）' : '仕事募集（一般アカウント）'}
             </h1>
             {isStudent && (
-              <p className="text-xs text-muted-foreground mt-1">
-                学生ステータス: {studentStatus}（approved でない場合は入力できません）
-              </p>
+              <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                <p>学生ステータス: {studentStatus}。approved でない場合は入力できません。</p>
+                {!isStudentAccount && <p className="text-destructive">学生アカウントではないため学生募集は利用できません。</p>}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -246,7 +256,7 @@ function JobNewContent() {
             <Button
               onClick={handleSubmit}
               className="bg-primary text-primary-foreground"
-              disabled={isStudent && studentStatus !== 'approved'}
+              disabled={studentLocked}
             >
               登録する
             </Button>
