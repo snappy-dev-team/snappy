@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/header'
 import SearchPanel from '@/components/search-panel'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { listUsers, UserRecord } from '@/lib/users'
+import { isLoggedIn } from '@/lib/auth'
+import { Star } from 'lucide-react'
 
 const areaLabelMap: Record<string, string> = {
   shibuya: '渋谷',
@@ -28,6 +31,59 @@ const genderLabelMap: Record<string, string> = {
   female: '女性',
   male: '男性',
   other: 'その他',
+}
+
+// Job types (same as featured-shops.tsx)
+type ClientProfile = {
+  client_display_name?: string
+  client_address?: string
+}
+
+type Client = {
+  id: number
+  role?: string
+  name?: string
+  metrics?: { dynamic_review_rating?: number }
+  client_profile?: ClientProfile
+}
+
+type ShopJob = {
+  id?: number
+  account_type?: 'general' | 'student'
+  client_id?: number
+  job_title_general?: string
+  job_purpose_general?: string
+  job_genre_general?: string
+  job_salon_area_general?: string
+  job_portfolio_images_general?: string[]
+  job_date_candidates?: string
+  job_time_range?: string
+  job_reward_type?: string
+  job_reward_cash?: string
+  job_reward_transport?: string
+  job_title_student?: string
+  job_purpose_student?: string
+  job_location_address_student?: string
+  job_sns_student?: string
+}
+
+type FeaturedCard = {
+  job: ShopJob
+  client?: Client
+  displayTitle: string
+  summary: string
+  location: string
+  timeframe: string
+  reward: string
+  image?: string
+}
+
+const FALLBACK_IMAGE = 'https://placehold.co/400x300?text=Recruiting'
+
+const formatReward = (job: ShopJob) => {
+  if (job.job_reward_cash && job.job_reward_cash !== '0') return `¥${job.job_reward_cash}`
+  if (job.job_reward_type && /free|無料/i.test(job.job_reward_type)) return '謝礼なし'
+  return '謝礼未設定'
 }
 
 // Helper to calculate age from birthdate
@@ -64,10 +120,12 @@ const isAgeInRange = (age: number, range: string): boolean => {
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   const initialTab = searchParams.get('tab') === 'models' ? 'models' : 'jobs'
   const [activeTab, setActiveTab] = useState<'models' | 'jobs'>(initialTab)
   const [users, setUsers] = useState<UserRecord[]>([])
+  const [jobCards, setJobCards] = useState<FeaturedCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -91,13 +149,65 @@ function SearchPageContent() {
   }, [searchParams])
 
   useEffect(() => {
-    listUsers()
-      .then(setUsers)
-      .catch(err => {
+    const fetchData = async () => {
+      try {
+        const [jobsRes, usersRes] = await Promise.all([
+          fetch('/api/jobs'),
+          listUsers()
+        ])
+        
+        if (!jobsRes.ok) throw new Error('failed to fetch jobs')
+        const jobsData = (await jobsRes.json()) as ShopJob[]
+        const usersData = usersRes
+        
+        setUsers(usersData)
+        
+        // Build job cards (same as featured-shops.tsx)
+        const clients = usersData.filter((user: any) => user.role === 'client')
+        const clientMap = new Map(clients.map((client: any) => [client.id, client as Client]))
+
+        const mapped: FeaturedCard[] = (jobsData ?? []).map((job) => {
+          const client = job.client_id ? clientMap.get(job.client_id) : undefined
+          const displayTitle =
+            job.account_type === 'student'
+              ? job.job_title_student || '学生募集'
+              : job.job_title_general || '一般募集'
+          const summary =
+            job.account_type === 'student'
+              ? job.job_purpose_student || job.job_sns_student || '募集内容を確認してください'
+              : job.job_purpose_general || job.job_genre_general || '募集内容を確認してください'
+          const location =
+            job.account_type === 'student'
+              ? job.job_location_address_student || client?.client_profile?.client_address || 'エリア未設定'
+              : job.job_salon_area_general || client?.client_profile?.client_address || 'エリア未設定'
+          const timeframe = job.job_time_range || job.job_date_candidates || '日程未定'
+          const image =
+            job.account_type === 'general'
+              ? job.job_portfolio_images_general?.[0]
+              : undefined
+
+          return {
+            job,
+            client,
+            displayTitle,
+            summary,
+            location,
+            timeframe,
+            reward: formatReward(job),
+            image,
+          }
+        })
+
+        setJobCards(mapped)
+      } catch (err) {
         console.error(err)
         setError('検索結果の取得に失敗しました。時間をおいて再度お試しください。')
-      })
-      .finally(() => setLoading(false))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   const filteredModels = useMemo(() => {
@@ -141,23 +251,33 @@ function SearchPageContent() {
       })
   }, [filters, users])
 
-  const filteredClients = useMemo(() => {
+  const filteredJobs = useMemo(() => {
     const kw = filters.keyword.trim().toLowerCase()
     const areaLabel = filters.area ? areaLabelMap[filters.area] ?? filters.area : ''
-    return users
-      .filter(user => user.role === 'client')
-      .filter(user => {
-        const profile = user.client_profile as any
-        const displayName = profile?.client_display_name || user.client_company_or_personal_name || user.name || ''
-        const haystack = `${displayName} ${user.email} ${profile?.client_address ?? ''}`.toLowerCase()
-        const matchesKeyword = kw ? haystack.includes(kw) : true
-        const matchesArea = areaLabel ? (profile?.client_address ?? '').includes(areaLabel) : true
-        return matchesKeyword && matchesArea
-      })
-  }, [filters, users])
+    
+    return jobCards.filter(card => {
+      const haystack = `${card.displayTitle} ${card.summary} ${card.location} ${card.client?.client_profile?.client_display_name ?? ''} ${card.client?.name ?? ''}`.toLowerCase()
+      const matchesKeyword = kw ? haystack.includes(kw) : true
+      const matchesArea = areaLabel ? card.location.includes(areaLabel) : true
+      return matchesKeyword && matchesArea
+    })
+  }, [filters, jobCards])
 
   const handleTabChange = (tab: 'models' | 'jobs') => {
     setActiveTab(tab)
+  }
+
+  const handleApplyClick = (e: React.MouseEvent, jobId?: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!jobId) return
+
+    if (!isLoggedIn()) {
+      router.push(`/login?redirect=/jobs/${jobId}`)
+      return
+    }
+
+    router.push(`/jobs/${jobId}`)
   }
 
   return (
@@ -194,7 +314,7 @@ function SearchPageContent() {
             <p className="text-sm text-muted-foreground">
               {activeTab === 'models'
                 ? `モデルの候補を${filteredModels.length}件表示中`
-                : `お仕事の候補を${filteredClients.length}件表示中`}
+                : `お仕事の候補を${filteredJobs.length}件表示中`}
             </p>
           </div>
 
@@ -236,7 +356,7 @@ function SearchPageContent() {
               </div>
             )
           ) : (
-            filteredClients.length === 0 ? (
+            filteredJobs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="w-16 h-16 mb-4 rounded-full bg-neutral-soft flex items-center justify-center">
                   <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -251,51 +371,74 @@ function SearchPageContent() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredClients.map(item => {
-                  const profile = item.client_profile as any
-                  const displayName =
-                    profile?.client_display_name || item.client_company_or_personal_name || item.name || '店舗名未設定'
-                  const area = profile?.client_address || item.client_address || 'エリア未設定'
-                  const description =
-                    profile?.client_company_or_personal_name ||
-                    '募集概要はまだ登録されていません。'
-                  const image = profile?.client_student_id_image
-
-                  return (
-                    <article
-                      key={item.id}
-                      className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-md shadow-secondary/10 p-4 md:p-5 flex flex-col md:flex-row gap-4 hover:-translate-y-0.5 transition-transform"
-                    >
-                      <div className="w-full md:w-40 h-32 md:h-32 rounded-xl overflow-hidden bg-neutral-100 border border-border/60">
+                {filteredJobs.map((shop) => (
+                  <Link key={shop.job.id} href={`/jobs/${shop.job.id}`} className="block group">
+                    <Card className="flex flex-col md:flex-row gap-4 rounded-2xl p-4 md:p-5 border-border hover:shadow-md transition-shadow">
+                      {/* Thumbnail */}
+                      <div className="w-full md:w-44 h-44 bg-neutral-100 rounded-xl overflow-hidden border border-border/60">
                         <img
-                          src={image || 'https://placehold.co/320x200?text=Shop'}
-                          alt={displayName}
+                          src={shop.image || FALLBACK_IMAGE}
+                          alt={shop.displayTitle}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="flex-1 min-w-0 space-y-2">
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1 min-w-0">
-                            <p className="text-xs text-muted-foreground">募集中</p>
-                            <h3 className="text-lg font-semibold leading-tight line-clamp-2">{displayName}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {shop.client?.client_profile?.client_display_name || shop.client?.name || 'ショップ名未設定'}
+                            </p>
+                            <h3 className="font-semibold text-foreground text-lg md:text-xl leading-tight line-clamp-2">
+                              {shop.displayTitle}
+                            </h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {shop.summary}
+                            </p>
                           </div>
-                          <Button variant="outline" size="sm" className="shrink-0">
-                            募集を見る
-                          </Button>
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            <span className="text-xs px-3 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20">
+                              {shop.reward}
+                            </span>
+                            <Button size="sm" onClick={(e) => handleApplyClick(e, shop.job.id)}>
+                              応募する
+                            </Button>
+                          </div>
                         </div>
+
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                           <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
-                            {area}
+                            {shop.location}
+                          </span>
+                          <span className="px-3 py-1 rounded-full bg-accent/20 text-foreground border border-border/60">
+                            {shop.timeframe}
                           </span>
                           <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
-                            登録日: {new Date(item.createdAt).toLocaleDateString()}
+                            {shop.job.account_type === 'student' ? '学生アカウント' : '一般アカウント'}
                           </span>
                         </div>
+
+                        {shop.client?.metrics?.dynamic_review_rating ? (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-3.5 h-3.5 ${
+                                  i < Math.floor(shop.client?.metrics?.dynamic_review_rating ?? 0)
+                                    ? 'fill-accent text-accent'
+                                    : 'text-border'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">評価はまだありません</div>
+                        )}
                       </div>
-                    </article>
-                  )
-                })}
+                    </Card>
+                  </Link>
+                ))}
               </div>
             )
           )}
