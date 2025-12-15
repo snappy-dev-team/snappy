@@ -163,14 +163,23 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ ok: false, error: 'user not found' }, { status: 404 })
     }
 
+    const { student_account_status: _ignoredStatus, client_profile: incomingClientProfile, ...safeUpdates } = body.updates
+
+    const clientProfileUpdates = incomingClientProfile
+      ? (() => {
+          const { student_account_status: _ignoredProfileStatus, ...rest } = incomingClientProfile as Record<string, unknown>
+          return rest
+        })()
+      : undefined
+
     const merged = {
       ...users[index],
-      ...body.updates,
-      model_profile: body.updates.model_profile
-        ? { ...(users[index].model_profile ?? {}), ...(body.updates.model_profile as Record<string, unknown>) }
+      ...safeUpdates,
+      model_profile: safeUpdates.model_profile
+        ? { ...(users[index].model_profile ?? {}), ...(safeUpdates.model_profile as Record<string, unknown>) }
         : users[index].model_profile,
-      client_profile: body.updates.client_profile
-        ? { ...(users[index].client_profile ?? {}), ...(body.updates.client_profile as Record<string, unknown>) }
+      client_profile: clientProfileUpdates
+        ? { ...(users[index].client_profile ?? {}), ...clientProfileUpdates }
         : users[index].client_profile,
     } as StoredUser
 

@@ -3,7 +3,7 @@
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { clearSessionUser, getSessionUser } from '@/lib/auth'
-import { ClientProfile, ModelProfile, StudentAccountStatus, updateUserProfile, UserRecord } from '@/lib/users'
+import { ClientProfile, ModelProfile, updateUserProfile, UserRecord } from '@/lib/users'
 import { LogOut, Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -69,7 +69,14 @@ export default function ProfileEditPage() {
     setMessage(null)
     setError(null)
     try {
-      const updated = await updateUserProfile(user.id, isModel ? { model_profile: modelProfile } : { client_profile: clientProfile })
+      const updates = isModel
+        ? { model_profile: modelProfile }
+        : (() => {
+            const { student_account_status: _ignoredStatus, ...clientProfilePayload } = clientProfile
+            return { client_profile: clientProfilePayload }
+          })()
+
+      const updated = await updateUserProfile(user.id, updates)
       setUser(updated)
       setMessage('プロフィールを保存しました。')
     } catch (err) {
@@ -171,7 +178,7 @@ export default function ProfileEditPage() {
                   { value: 'private', label: '公開しない' },
                 ]}
                 onChange={v => setModelProfile(prev => ({ ...prev, model_profile_visibility: v as ModelProfile['model_profile_visibility'] }))}
-                helper="「公開しない」の場合は検索・一覧から除外されます。"
+                helper="「公開しない」を選ぶと検索・一覧から除外されます。"
               />
             </div>
           </section>
@@ -192,19 +199,18 @@ export default function ProfileEditPage() {
                 onChange={v => setClientProfile(prev => ({ ...prev, client_contact_gender: v as ClientProfile['client_contact_gender'] }))}
               />
               <Field label="住所 *" value={clientProfile.client_address} onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))} />
-              <Field label="電話番号" value={clientProfile.client_phone} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
-              <Field label="学生証画像URL" value={clientProfile.client_student_id_image} onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))} />
-              <SelectField
-                label="学生アカウントステータス"
-                value={clientProfile.student_account_status}
-                options={[
-                  { value: 'pending', label: 'pending' },
-                  { value: 'approved', label: 'approved' },
-                  { value: 'rejected', label: 'rejected' },
-                ]}
-                onChange={v => setClientProfile(prev => ({ ...prev, student_account_status: v as StudentAccountStatus }))}
-                helper="承認済みの場合のみ学生用の募集フォームが有効です。"
-              />
+              <Field label="電話番号" value={clientProfile.client_phone ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
+              <Field label="学生証画像URL" value={clientProfile.client_student_id_image ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))} />
+
+              <div className="space-y-2 text-sm md:col-span-2">
+                <span className="font-medium text-foreground">学生アカウントステータス</span>
+                <p className="px-4 py-2 rounded-lg border border-border bg-muted/20 text-foreground">
+                  {clientProfile.student_account_status ?? 'pending'}（変更は管理用マイページのみ）
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  学生アカウントの有効化・無効化は管理用マイページでのみ設定できます。個人マイページからは変更できません。
+                </p>
+              </div>
             </div>
           </section>
         )}

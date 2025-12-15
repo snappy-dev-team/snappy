@@ -1,13 +1,13 @@
 "use client"
 
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { clearSessionUser, getSessionUser } from '@/lib/auth'
 import { ClientProfile, ModelProfile, StudentAccountStatus, UserRecord, fetchMetrics, listUsers } from '@/lib/users'
 import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, UserCog } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
 
 const emptyModelProfile: ModelProfile = {
   model_display_name: '',
@@ -101,6 +101,7 @@ export default function MyPage() {
   }, [user?.id])
 
   const isModel = user?.role === 'model'
+  const isStudentClient = !isModel && Boolean(user?.client_student_plan ?? user?.client_profile?.client_student_plan)
   const studentStatus = user?.student_account_status as StudentAccountStatus | undefined
 
   const profileName = useMemo(() => {
@@ -154,13 +155,10 @@ export default function MyPage() {
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">{profileName}</h1>
                 <p className="text-sm text-muted-foreground mt-1">{isModel ? 'モデル会員' : 'クライアント会員'}</p>
-                {!isModel && (
+                {isStudentClient && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <ShieldCheck className="size-3 text-primary" />
-                    <span>
-                      学生プラン: {user.client_student_plan ? '希望あり' : '希望なし'} / ステータス:{' '}
-                      {studentStatus ?? '未設定'}
-                    </span>
+                    <span>学生アカウント / ステータス: {studentStatus ?? '未設定'}</span>
                   </div>
                 )}
               </div>
@@ -210,20 +208,22 @@ export default function MyPage() {
                   className="w-full justify-between"
                   onClick={() => router.push('/mypage/jobs/new?type=general')}
                 >
-                  仕事募集
+                  仕事募集（一般）
                   <span className="text-xs text-primary-foreground/90">一般アカウント用</span>
                 </Button>
-                <Button
-                  variant={studentStatus === 'approved' ? 'default' : 'outline'}
-                  disabled={studentStatus !== 'approved'}
-                  className="w-full justify-between"
-                  onClick={() => router.push('/mypage/jobs/new?type=student')}
-                >
-                  仕事募集（学生）
-                  <span className="text-xs text-muted-foreground">
-                    {studentStatus === 'approved' ? '学生アカウント用' : '承認待ち'}
-                  </span>
-                </Button>
+                {isStudentClient && (
+                  <Button
+                    variant={studentStatus === 'approved' ? 'default' : 'outline'}
+                    disabled={studentStatus !== 'approved'}
+                    className="w-full justify-between"
+                    onClick={() => router.push('/mypage/jobs/new?type=student')}
+                  >
+                    仕事募集（学生）
+                    <span className="text-xs text-muted-foreground">
+                      {studentStatus === 'approved' ? '学生アカウント用' : '承認をお待ちください'}
+                    </span>
+                  </Button>
+                )}
               </>
             )}
           </div>
