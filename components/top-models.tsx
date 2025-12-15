@@ -8,6 +8,7 @@ type ModelProfile = {
   model_display_name?: string
   model_birthdate?: string
   model_activity_area?: string
+  model_main_image?: string
 }
 
 type Model = {
@@ -68,11 +69,13 @@ export default function TopModels() {
     () =>
       models.map((model) => {
         const ageFromBirth = calcAge(model.model_profile?.model_birthdate as string | undefined)
+        const mainImage = model.model_profile?.model_main_image as string | undefined
         return {
           ...model,
           displayName: (model.model_profile?.model_display_name as string | undefined)?.trim() || (model.name as string | undefined) || '名前未設定',
           activityArea: (model.model_profile?.model_activity_area as string | undefined) || (model.location as string | undefined) || '場所不明',
           displayAge: ageFromBirth ?? model.age,
+          mainImage: mainImage && (mainImage.startsWith('data:image') || mainImage.startsWith('http')) ? mainImage : null,
         }
       }),
     [models],
@@ -128,8 +131,16 @@ export default function TopModels() {
                     key={model.id}
                     className="shrink-0 w-40 md:w-44 p-4 rounded-2xl border-border hover:shadow-md transition-shadow cursor-pointer"
                   >
-                    <div className="w-full aspect-square bg-linear-to-br from-primary/20 to-secondary/10 rounded-xl flex items-center justify-center mb-3">
-                      <User className="w-20 h-20 text-primary/40" />
+                    <div className="w-full aspect-square bg-linear-to-br from-primary/20 to-secondary/10 rounded-xl flex items-center justify-center mb-3 overflow-hidden">
+                      {model.mainImage ? (
+                        <img
+                          src={model.mainImage}
+                          alt={model.displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-20 h-20 text-primary/40" />
+                      )}
                     </div>
 
                     {/* Model Info */}
