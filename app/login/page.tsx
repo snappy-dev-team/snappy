@@ -47,8 +47,13 @@ function LoginPageContent() {
     <div className="min-h-screen bg-white">
       <header className="border-b border-border">
         <div className="max-w-2xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="text-primary font-bold text-lg hover:opacity-80 transition-opacity">
-            Snappy
+          <Link href="/" className="hover:opacity-80 transition-opacity flex items-center">
+            <img
+              src="/images/logo.png"
+              alt="Snappy"
+              width={140}
+              height={40}
+            />
           </Link>
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
             トップへ戻る

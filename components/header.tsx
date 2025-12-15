@@ -1,6 +1,7 @@
 'use client'
 
 import { getSessionUser } from '@/lib/auth'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -15,9 +16,16 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="flex items-center justify-between h-14 px-4 md:px-8 max-w-6xl mx-auto">
+
         {/* Logo */}
-        <Link href="/" className="text-2xl font-bold tracking-wide text-primary hover:opacity-80 transition-opacity">
-          Snappy
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Image
+            src="/images/logo.png"
+            alt="Snappy"
+            width={140}
+            height={40}
+            priority
+          />
         </Link>
 
         {/* Navigation */}

@@ -2,11 +2,11 @@
 
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
-import { clearSessionUser, getSessionUser } from '@/lib/auth'
-import { ClientProfile, ModelProfile, updateUserProfile, UserRecord } from '@/lib/users'
-import { LogOut, Save } from 'lucide-react'
+import { clearSessionUser, getSessionUser, setSessionUser } from '@/lib/auth'
+import { ClientProfile, ModelProfile, StudentAccountStatus, updateUserProfile, UserRecord } from '@/lib/users'
+import { LogOut, Save, Upload, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 const emptyModelProfile: ModelProfile = {
   model_display_name: '',
@@ -78,6 +78,7 @@ export default function ProfileEditPage() {
 
       const updated = await updateUserProfile(user.id, updates)
       setUser(updated)
+      setSessionUser(updated)
       setMessage('プロフィールを保存しました。')
     } catch (err) {
       console.error(err)
@@ -158,12 +159,15 @@ export default function ProfileEditPage() {
                 ]}
                 onChange={v => setModelProfile(prev => ({ ...prev, model_hair_style: v }))}
               />
-              <Field label="メイン画像URL *" value={modelProfile.model_main_image} onChange={v => setModelProfile(prev => ({ ...prev, model_main_image: v }))} placeholder="https://..." />
-              <Field
-                label="サブ画像URL（カンマ区切り）"
-                value={modelProfile.model_sub_images.join(', ')}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_sub_images: v.split(',').map(item => item.trim()).filter(Boolean) }))}
-                placeholder="https://... , https://..."
+              <ImageUploadField
+                label="メイン画像 *"
+                value={modelProfile.model_main_image}
+                onChange={v => setModelProfile(prev => ({ ...prev, model_main_image: v }))}
+              />
+              <MultiImageUploadField
+                label="サブ画像（複数選択可）"
+                values={modelProfile.model_sub_images}
+                onChange={v => setModelProfile(prev => ({ ...prev, model_sub_images: v }))}
               />
               <Field label="職業 *" value={modelProfile.model_job_category} onChange={v => setModelProfile(prev => ({ ...prev, model_job_category: v }))} placeholder="学生 / 会社員 など" />
               <Field label="趣味 *" value={modelProfile.model_hobbies} onChange={v => setModelProfile(prev => ({ ...prev, model_hobbies: v }))} />
@@ -304,5 +308,201 @@ function SelectField({
       </select>
       {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
     </label>
+  )
+}
+
+function ImageUploadField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // ファイルサイズチェック（5MB制限）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ファイルサイズは5MB以下にしてください')
+      return
+    }
+
+    // 画像ファイルチェック
+    if (!file.type.startsWith('image/')) {
+      alert('画像ファイルを選択してください')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      onChange(base64)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemove = () => {
+    onChange('')
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
+  }
+
+  // base64かURLかを判定して画像を表示
+  const isValidImage = value && (value.startsWith('data:image') || value.startsWith('http'))
+
+  return (
+    <div className="space-y-2 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      <div className="space-y-3">
+        {isValidImage && (
+          <div className="relative inline-block">
+            <img
+              src={value}
+              alt="プレビュー"
+              className="w-32 h-32 object-cover rounded-lg border border-border"
+            />
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 hover:bg-destructive/90"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
+        <div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+            id={`image-upload-${label}`}
+          />
+          <label
+            htmlFor={`image-upload-${label}`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors"
+          >
+            <Upload className="size-4" />
+            画像を選択
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MultiImageUploadField({
+  label,
+  values,
+  onChange,
+}: {
+  label: string
+  values: string[]
+  onChange: (v: string[]) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const fileArray = Array.from(files)
+    
+    // ファイルサイズチェック
+    for (const file of fileArray) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('各ファイルサイズは5MB以下にしてください')
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        alert('画像ファイルを選択してください')
+        return
+      }
+    }
+
+    // すべてのファイルをbase64に変換
+    const promises = fileArray.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          resolve(event.target?.result as string)
+        }
+        reader.readAsDataURL(file)
+      })
+    })
+
+    Promise.all(promises).then(newImages => {
+      onChange([...values, ...newImages])
+    })
+
+    // inputをリセット
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
+  }
+
+  const handleRemove = (index: number) => {
+    const newValues = values.filter((_, i) => i !== index)
+    onChange(newValues)
+  }
+
+  return (
+    <div className="space-y-2 text-sm md:col-span-2">
+      <span className="font-medium text-foreground">{label}</span>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-3">
+          {values.map((value, index) => {
+            const isValidImage = value && (value.startsWith('data:image') || value.startsWith('http'))
+            if (!isValidImage) return null
+            return (
+              <div key={index} className="relative inline-block">
+                <img
+                  src={value}
+                  alt={`サブ画像 ${index + 1}`}
+                  className="w-24 h-24 object-cover rounded-lg border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(index)}
+                  className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 hover:bg-destructive/90"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+        <div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+            id={`multi-image-upload-${label}`}
+          />
+          <label
+            htmlFor={`multi-image-upload-${label}`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors"
+          >
+            <Upload className="size-4" />
+            画像を追加
+          </label>
+          {values.length > 0 && (
+            <span className="ml-3 text-xs text-muted-foreground">
+              {values.length}枚の画像が選択されています
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
