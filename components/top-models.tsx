@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { ChevronLeft, ChevronRight, Star, User } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -126,66 +127,61 @@ export default function TopModels() {
                 className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
                 style={{ scrollBehavior: 'smooth' }}
               >
-                {normalizedModels.map((model) => (
-                  <Card
-                    key={model.id}
-                    className="shrink-0 w-40 md:w-44 p-4 rounded-2xl border-border hover:shadow-md transition-shadow cursor-pointer"
-                  >
-                    <div className="w-full aspect-square bg-linear-to-br from-primary/20 to-secondary/10 rounded-xl flex items-center justify-center mb-3 overflow-hidden">
-                      {model.mainImage ? (
-                        <img
-                          src={model.mainImage}
-                          alt={model.displayName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-20 h-20 text-primary/40" />
-                      )}
-                    </div>
-
-                    {/* Model Info */}
-                    <div className="space-y-2">
-                      <div>
-                        <p className="font-semibold text-foreground text-sm truncate">{model.displayName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {model.displayAge ? `${model.displayAge}歳` : '年齢不明'} / {model.activityArea}
-                        </p>
-                      </div>
-
-                      {/* Rating */}
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3.5 h-3.5 ${
-                              i < Math.floor((model.rating as number | undefined) ?? 0)
-                                ? 'fill-accent text-accent'
-                                : 'text-border'
-                            }`}
+                {normalizedModels.map((model, index) => (
+                  <Link key={`${model.id}-${index}`} href={`/models/${model.id}`} className="block">
+                    <Card className="shrink-0 w-40 md:w-44 p-4 rounded-2xl border-border hover:shadow-md transition-shadow cursor-pointer">
+                      <div className="w-full aspect-square bg-linear-to-br from-primary/20 to-secondary/10 rounded-xl flex items-center justify-center mb-3 overflow-hidden">
+                        {model.mainImage ? (
+                          <img
+                            src={model.mainImage}
+                            alt={model.displayName}
+                            className="w-full h-full object-cover"
                           />
-                        ))}
+                        ) : (
+                          <User className="w-20 h-20 text-primary/40" />
+                        )}
                       </div>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {(model.tags ?? []).map((tag) => (
-                          <span
-                            key={tag as string}
-                            className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium"
-                          >
-                            {tag as string}
-                          </span>
-                        ))}
+                      {/* Model Info */}
+                      <div className="space-y-2">
+                        <div>
+                          <p className="font-semibold text-foreground text-sm truncate">{model.displayName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {model.displayAge ? `${model.displayAge}?` : '????E'} / {model.activityArea}
+                          </p>
+                        </div>
+
+                        {/* Rating */}
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3.5 h-3.5 ${i < Math.floor((model.rating as number | undefined) ?? 0) ? 'fill-accent text-accent' : 'text-border'}`}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {(model.tags ?? []).map((tag) => (
+                            <span
+                              key={tag as string}
+                              className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium"
+                            >
+                              {tag as string}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </Link>
                 ))}
               </div>
 
               <button
                 onClick={() => scroll('right')}
                 className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-all hover:scale-110"
-                aria-label="スクロール右"
+                aria-label="??????"
               >
                 <ChevronRight className="w-5 h-5 text-primary" />
               </button>

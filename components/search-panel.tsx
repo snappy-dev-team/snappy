@@ -6,12 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChevronDown, Plus, X } from 'lucide-react'
 
-const categories = [
-  { label: 'ヘア', value: 'hair', active: true },
-  { label: 'ネイル', value: 'nail', active: false },
-  { label: 'アイラッシュ', value: 'eyelash', active: false },
-]
-
 const areaOptions = [
   { label: 'エリアを選択', value: '' },
   { label: '東京', value: 'tokyo' },
@@ -84,7 +78,7 @@ export default function SearchPanel({
 
   // Job search filters
   const [jobArea, setJobArea] = useState(embedded ? searchParams.get('area') ?? '' : '')
-  const [jobCategory, setJobCategory] = useState(embedded ? searchParams.get('category') ?? 'hair' : 'hair')
+  // カテゴリーフィルターは廃止
   const [jobDateRange, setJobDateRange] = useState(embedded ? searchParams.get('date') ?? '' : '')
 
   // Model search filters
@@ -92,7 +86,7 @@ export default function SearchPanel({
   const [modelAgeRange, setModelAgeRange] = useState(embedded ? searchParams.get('age') ?? '' : '')
   const [modelHairStyle, setModelHairStyle] = useState(embedded ? searchParams.get('hair') ?? '' : '')
   const [modelGender, setModelGender] = useState(embedded ? searchParams.get('gender') ?? '' : '')
-  const [modelCategory, setModelCategory] = useState(embedded ? searchParams.get('category') ?? 'hair' : 'hair')
+  // カテゴリーフィルターは廃止
 
   // Advanced filters (shared)
   const [femaleStaff, setFemaleStaff] = useState(false)
@@ -112,16 +106,15 @@ export default function SearchPanel({
       setModelAgeRange(searchParams.get('age') ?? '')
       setModelHairStyle(searchParams.get('hair') ?? '')
       setModelGender(searchParams.get('gender') ?? '')
-      setJobCategory(searchParams.get('category') ?? 'hair')
-      setModelCategory(searchParams.get('category') ?? 'hair')
-    }
-  }, [embedded, searchParams])
+      // カテゴリーフィルターは廃止
+  }
+}, [embedded, searchParams])
 
   const buildJobQuery = () => {
     const params = new URLSearchParams()
     params.set('tab', 'clients')
     if (jobArea) params.set('area', jobArea)
-    if (jobCategory) params.set('category', jobCategory)
+    // カテゴリーフィルターは廃止
     if (jobDateRange) params.set('date', jobDateRange)
     if (femaleStaff || maleStaff) {
       params.set('staffGender', femaleStaff && maleStaff ? 'both' : femaleStaff ? 'female' : 'male')
@@ -138,7 +131,7 @@ export default function SearchPanel({
     if (modelAgeRange) params.set('age', modelAgeRange)
     if (modelHairStyle) params.set('hair', modelHairStyle)
     if (modelGender) params.set('gender', modelGender)
-    if (modelCategory) params.set('category', modelCategory)
+    // カテゴリーフィルターは廃止
     return params
   }
 
@@ -184,21 +177,6 @@ export default function SearchPanel({
 
             {/* Jobs tab */}
             <TabsContent value="jobs" className="space-y-4 mt-4">
-              {/* Category Pills */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map(cat => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setJobCategory(cat.value)}
-                    className={`px-4 py-1 rounded-full text-sm font-medium transition-all ${
-                      jobCategory === cat.value ? 'bg-primary text-primary-foreground' : 'bg-neutral-soft text-muted-foreground hover:bg-border'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_auto] gap-3 items-end mt-4">
                 {/* Area Select */}
@@ -329,21 +307,6 @@ export default function SearchPanel({
 
             {/* Salon Search Tab - モデルをお探しの方 */}
             <TabsContent value="models" className="space-y-4 mt-4">
-              {/* Category Pills */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map(cat => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setModelCategory(cat.value)}
-                    className={`px-4 py-1 rounded-full text-sm font-medium transition-all ${
-                      modelCategory === cat.value ? 'bg-primary text-primary-foreground' : 'bg-neutral-soft text-muted-foreground hover:bg-border'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end mt-4">
                 {/* Age Range */}

@@ -32,28 +32,8 @@ type StoredUser = {
 const redis = Redis.fromEnv()
 const USERS_KEY = 'users'
 
-const requiredProfileKeys: (keyof ModelProfile)[] = [
-  'model_display_name',
-  'model_birthdate',
-  'model_gender',
-  'model_activity_area',
-  'model_height',
-  'model_body_type',
-  'model_hair_style',
-  'model_job_category',
-  'model_hobbies',
-  'model_main_image',
-]
-
 const hasCompletedProfile = (profile?: ModelProfile) =>
-  Boolean(
-    profile &&
-      profile.model_profile_visibility !== 'private' &&
-      requiredProfileKeys.every((key) => {
-        const value = profile[key]
-        return typeof value === 'string' ? value.trim().length > 0 : Boolean(value)
-      }),
-  )
+  Boolean(profile && profile.model_profile_visibility !== 'private')
 
 export async function GET() {
   try {
