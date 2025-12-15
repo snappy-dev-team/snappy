@@ -34,7 +34,7 @@ export default function Header() {
             href="/register?type=model"
             className="text-sm text-muted-foreground hover:text-foreground transition-all hover:scale-105"
           >
-            モデル登録
+            新規登録
           </Link>
           <Link
             href={mypageHref}

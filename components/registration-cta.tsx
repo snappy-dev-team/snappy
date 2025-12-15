@@ -26,7 +26,7 @@ export default function RegistrationCTA() {
               </p>
               <Link href="/register?type=model" className="block">
                 <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-6 text-lg font-semibold">
-                  モデル登録
+                  新規登録（モデル）
                 </Button>
               </Link>
             </div>
@@ -37,11 +37,11 @@ export default function RegistrationCTA() {
             <div className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">クライアントの方へ</h3>
               <p className="text-muted-foreground text-sm">
-                理想のモデルを探して、新しいスタイルや技術の提案ができます。サロンやサービス情報を登録して、登録モデルにアプローチしましょう。
+                理想のモデルを探して、新しいスタイルや施術を提案できます。サロンやサービス内容を登録して、登録モデルにアプローチしましょう。
               </p>
               <Link href="/register?type=client" className="block">
                 <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg py-6 text-lg font-semibold">
-                  クライアント登録
+                  新規登録（クライアント）
                 </Button>
               </Link>
             </div>

@@ -48,12 +48,12 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/register?type=model" className="text-muted-foreground hover:text-primary transition-colors">
-                  モデル登録
+                  新規登録（モデル）
                 </Link>
               </li>
               <li>
                 <Link href="/register?type=client" className="text-muted-foreground hover:text-primary transition-colors">
-                  クライアント登録
+                  新規登録（クライアント）
                 </Link>
               </li>
             </ul>

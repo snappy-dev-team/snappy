@@ -1,10 +1,10 @@
 "use client"
 
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { isLoggedIn } from '@/lib/auth'
-import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 type ClientProfile = {
   client_display_name?: string
@@ -107,9 +107,8 @@ export default function JobDetailPage() {
         if (!jobsRes.ok || !usersRes.ok) throw new Error('failed to fetch job detail')
         const jobs = (await jobsRes.json()) as JobDetail[]
         const users = (await usersRes.json()) as Client[]
-        const matchedJob = jobs.find((item) => item.id === jobId) ?? null
-        const matchedClient =
-          matchedJob?.client_id != null ? users.find((user) => user.id === matchedJob.client_id) ?? null : null
+        const matchedJob = jobs.find(item => item.id === jobId) ?? null
+        const matchedClient = matchedJob?.client_id != null ? users.find(user => user.id === matchedJob.client_id) ?? null : null
         setJob(matchedJob)
         setClient(matchedClient)
       } catch (error) {
@@ -134,11 +133,11 @@ export default function JobDetailPage() {
     job?.account_type === 'student'
       ? job.job_location_address_student || 'エリア未設定'
       : job?.job_salon_area_general || job?.job_shoot_location || 'エリア未設定'
-  const timeframe = job?.job_time_range || job?.job_date_candidates || '日程未定'
+  const timeframe = job?.job_time_range || job?.job_date_candidates || '日程未設定'
   const reward =
     job?.job_reward_cash && job.job_reward_cash !== '0'
       ? `¥${job.job_reward_cash}`
-      : job?.job_reward_type && /free|無料/i.test(job.job_reward_type)
+      : job?.job_reward_type && /free|無償|無料/i.test(job.job_reward_type)
         ? '謝礼なし'
         : job?.job_reward_details || '謝礼未設定'
   const heroImage =
@@ -152,7 +151,7 @@ export default function JobDetailPage() {
       router.push(`/login?redirect=/jobs/${job.id}`)
       return
     }
-    // TODO: 応募フローが用意されたらここでモーダルやフォームを呼び出す
+    router.push(`/apply/confirm?type=job&targetId=${job.id}`)
   }
 
   if (loading) {
@@ -183,7 +182,7 @@ export default function JobDetailPage() {
             <p className="text-sm text-muted-foreground">募集の詳細</p>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">{displayTitle}</h1>
             <p className="text-sm text-muted-foreground">
-              {client?.client_profile?.client_display_name || client?.name || 'ショップ名未設定'}
+              {client?.client_profile?.client_display_name || client?.name || 'クライアント名未設定'}
             </p>
           </div>
           <Button variant="outline" onClick={() => router.back()}>
@@ -215,12 +214,16 @@ export default function JobDetailPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <DetailRow label="報酬">{reward}</DetailRow>
-              <DetailRow label="交通費">{job.job_reward_transport || '記載なし'}</DetailRow>
+              <DetailRow label="交通費">{(job as any).job_reward_transport || '記載なし'}</DetailRow>
               <DetailRow label="希望する条件">
-                {job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'}
+                {job?.account_type === 'student'
+                  ? job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'
+                  : job?.job_model_other_conditions || job?.job_model_hair_conditions || '記載なし'}
               </DetailRow>
-              <DetailRow label="施術/撮影内容">
-                {job.job_service_contents || job.job_style_after || '記載なし'}
+              <DetailRow label="施術・撮影内容">
+                {job?.account_type === 'student'
+                  ? job.job_service_contents || job.job_style_after || '記載なし'
+                  : job?.job_service_contents || job?.job_style_after || '記載なし'}
               </DetailRow>
             </div>
 
