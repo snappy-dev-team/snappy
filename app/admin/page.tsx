@@ -26,7 +26,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [matchUpdating, setMatchUpdating] = useState<number | null>(null)
 
   const userMap = useMemo(() => {
     const map = new Map<number, UserRecord>()

@@ -42,11 +42,6 @@ const emptyClientProfile: ClientProfile = {
   client_student_plan: false,
   client_student_id_image: '',
   student_account_status: 'pending',
-  client_main_image: '',
-  client_sub_images: [],
-  client_mood: '',
-  client_features: '',
-  client_contact_photo: '',
 }
 
 const statCards = [
