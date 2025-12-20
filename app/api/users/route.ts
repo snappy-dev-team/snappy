@@ -77,6 +77,11 @@ const buildClientProfile = (body: IncomingPayload) => ({
   client_student_plan: Boolean(body.client_student_plan),
   client_student_id_image: body.client_student_id_image ?? '',
   student_account_status: body.client_student_plan ? 'pending' : 'approved',
+  client_main_image: '',
+  client_sub_images: [],
+  client_mood: '',
+  client_features: '',
+  client_contact_photo: '',
 })
 
 export async function GET() {

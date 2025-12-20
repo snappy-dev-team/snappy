@@ -6,12 +6,28 @@ type MatchRecord = {
   job_id: number
   model_user_id: number
   client_user_id: number
-  status: 'matched' | 'completed' | 'cancelled'
+  status:
+    | 'matched'
+    | 'completed'
+    | 'cancelled'
+    | 'applied'
+    | 'negotiating'
+    | 'contract_signed'
+    | 'no_response'
   createdAt: string
 }
 
 const redis = Redis.fromEnv()
 const MATCHES_KEY = 'matches'
+const allowedStatuses: MatchRecord['status'][] = [
+  'applied',
+  'negotiating',
+  'contract_signed',
+  'no_response',
+  'matched',
+  'completed',
+  'cancelled',
+]
 
 export async function GET() {
   const matches = ((await redis.get<MatchRecord[]>(MATCHES_KEY)) ?? []) as MatchRecord[]
@@ -24,12 +40,15 @@ export async function POST(req: Request) {
     if (!body.job_id || !body.model_user_id || !body.client_user_id) {
       return NextResponse.json({ ok: false, error: 'job_id, model_user_id, client_user_id are required' }, { status: 400 })
     }
+    const status = allowedStatuses.includes(body.status as MatchRecord['status'])
+      ? (body.status as MatchRecord['status'])
+      : 'applied'
 
     const matches = ((await redis.get<MatchRecord[]>(MATCHES_KEY)) ?? []) as MatchRecord[]
     const match: MatchRecord = {
       id: Date.now(),
       createdAt: new Date().toISOString(),
-      status: body.status ?? 'matched',
+      status,
       job_id: body.job_id,
       model_user_id: body.model_user_id,
       client_user_id: body.client_user_id,
@@ -40,6 +59,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, match })
   } catch (error) {
     console.error('Match creation failed', error)
+    return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const body = (await req.json()) as { id?: number; status?: MatchRecord['status'] }
+    if (!body.id || !body.status) {
+      return NextResponse.json({ ok: false, error: 'id and status are required' }, { status: 400 })
+    }
+    if (!allowedStatuses.includes(body.status)) {
+      return NextResponse.json({ ok: false, error: 'invalid status' }, { status: 400 })
+    }
+
+    const matches = ((await redis.get<MatchRecord[]>(MATCHES_KEY)) ?? []) as MatchRecord[]
+    const index = matches.findIndex(match => match.id === body.id)
+    if (index === -1) {
+      return NextResponse.json({ ok: false, error: 'match not found' }, { status: 404 })
+    }
+
+    const updated = { ...matches[index], status: body.status }
+    matches[index] = updated
+    await redis.set(MATCHES_KEY, matches)
+
+    return NextResponse.json({ ok: true, match: updated })
+  } catch (error) {
+    console.error('Match update failed', error)
     return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })
   }
 }

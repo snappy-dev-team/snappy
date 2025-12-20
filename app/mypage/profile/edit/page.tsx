@@ -41,6 +41,11 @@ const emptyClientProfile: ClientProfile = {
   client_student_plan: false,
   client_student_id_image: '',
   student_account_status: 'pending',
+  client_main_image: '',
+  client_sub_images: [],
+  client_mood: '',
+  client_features: '',
+  client_contact_photo: '',
 }
 
 export default function ProfileEditPage() {
@@ -205,6 +210,31 @@ export default function ProfileEditPage() {
               <Field label="住所 *" value={clientProfile.client_address} onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))} />
               <Field label="電話番号" value={clientProfile.client_phone ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
               <Field label="学生証画像URL" value={clientProfile.client_student_id_image ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))} />
+              <ImageUploadField
+                label="店舗メイン画像"
+                value={clientProfile.client_main_image ?? ''}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_main_image: v }))}
+              />
+              <MultiImageUploadField
+                label="店舗サブ画像（複数選択可）"
+                values={clientProfile.client_sub_images ?? []}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_sub_images: v }))}
+              />
+              <TextareaField
+                label="雰囲気・コンセプト"
+                value={clientProfile.client_mood ?? ''}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_mood: v }))}
+              />
+              <TextareaField
+                label="特徴（箇条書き推奨）"
+                value={clientProfile.client_features ?? ''}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_features: v }))}
+              />
+              <ImageUploadField
+                label="担当者顔写真"
+                value={clientProfile.client_contact_photo ?? ''}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_contact_photo: v }))}
+              />
 
               <div className="space-y-2 text-sm md:col-span-2">
                 <span className="font-medium text-foreground">学生アカウントステータス</span>

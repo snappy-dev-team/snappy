@@ -61,6 +61,11 @@ export type ClientProfile = {
   client_student_plan?: boolean
   client_student_id_image?: string
   student_account_status?: StudentAccountStatus
+  client_main_image?: string
+  client_sub_images?: string[]
+  client_mood?: string
+  client_features?: string
+  client_contact_photo?: string
 }
 
 export type JobBase = {
@@ -140,7 +145,7 @@ export type MatchRecord = {
   job_id: number
   model_user_id: number
   client_user_id: number
-  status: 'matched' | 'completed' | 'cancelled'
+  status: 'matched' | 'completed' | 'cancelled' | 'applied' | 'negotiating' | 'contract_signed' | 'no_response'
   createdAt: string
 }
 
