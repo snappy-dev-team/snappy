@@ -145,7 +145,7 @@ export type MatchRecord = {
   job_id: number
   model_user_id: number
   client_user_id: number
-  status: 'matched' | 'completed' | 'cancelled'
+  status: 'matched' | 'completed' | 'cancelled' | 'applied' | 'negotiating' | 'contract_signed' | 'no_response'
   createdAt: string
 }
 
