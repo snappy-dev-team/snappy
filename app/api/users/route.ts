@@ -24,6 +24,8 @@ type StoredUser = {
   student_account_status?: 'pending' | 'approved' | 'rejected'
   model_profile?: Record<string, unknown>
   client_profile?: Record<string, unknown>
+  contact_sns_type?: 'instagram' | 'twitter' | 'other' | ''
+  contact_sns_id?: string
 }
 
 type PatchPayload = {
@@ -65,6 +67,8 @@ const buildModelProfile = (body: IncomingPayload) => ({
   model_self_intro: '',
   model_achievements: '',
   model_profile_visibility: 'public',
+  contact_sns_type: '',
+  contact_sns_id: '',
 })
 
 const buildClientProfile = (body: IncomingPayload) => ({
@@ -77,11 +81,8 @@ const buildClientProfile = (body: IncomingPayload) => ({
   client_student_plan: Boolean(body.client_student_plan),
   client_student_id_image: body.client_student_id_image ?? '',
   student_account_status: body.client_student_plan ? 'pending' : 'approved',
-  client_main_image: '',
-  client_sub_images: [],
-  client_mood: '',
-  client_features: '',
-  client_contact_photo: '',
+  contact_sns_type: '',
+  contact_sns_id: '',
 })
 
 export async function GET() {
@@ -113,6 +114,8 @@ export async function POST(req: Request) {
         model_signup_birthdate: body.model_signup_birthdate,
         model_signup_address: body.model_signup_address,
         passwordHash: hashPassword(body.model_signup_password),
+        contact_sns_type: '',
+        contact_sns_id: '',
         model_profile: buildModelProfile(body),
       }
 
@@ -125,11 +128,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'client required fields are missing' }, { status: 400 })
     }
 
-    const user: StoredUser = {
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      role: 'client',
-      name: body.client_company_or_personal_name,
+      const user: StoredUser = {
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        role: 'client',
+        name: body.client_company_or_personal_name,
       email: body.client_email,
       client_type: body.client_type,
       client_company_or_personal_name: body.client_company_or_personal_name,
@@ -138,12 +141,14 @@ export async function POST(req: Request) {
       client_address: body.client_address,
       client_email: body.client_email,
       client_phone: body.client_phone,
-      client_student_plan: Boolean(body.client_student_plan),
-      client_student_id_image: body.client_student_id_image,
-      student_account_status: body.client_student_plan ? 'pending' : 'approved',
-      passwordHash: hashPassword(body.client_password),
-      client_profile: buildClientProfile(body),
-    }
+        client_student_plan: Boolean(body.client_student_plan),
+        client_student_id_image: body.client_student_id_image,
+        student_account_status: body.client_student_plan ? 'pending' : 'approved',
+        passwordHash: hashPassword(body.client_password),
+        contact_sns_type: '',
+        contact_sns_id: '',
+        client_profile: buildClientProfile(body),
+      }
 
     users.push(user)
     await redis.set(USERS_KEY, users)

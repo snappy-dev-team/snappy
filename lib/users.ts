@@ -2,6 +2,7 @@ export type MemberRole = 'model' | 'client'
 export type StudentAccountStatus = 'pending' | 'approved' | 'rejected'
 export type ClientType = 'individual' | 'corporation'
 export type Gender = 'male' | 'female' | 'other'
+export type ContactSnsType = 'instagram' | 'twitter' | 'other' | ''
 
 export type ModelSignupPayload = {
   role: 'model'
@@ -49,6 +50,8 @@ export type ModelProfile = {
   model_self_intro: string
   model_achievements: string
   model_profile_visibility: 'public' | 'private'
+  contact_sns_type?: ContactSnsType
+  contact_sns_id?: string
 }
 
 export type ClientProfile = {
@@ -61,11 +64,8 @@ export type ClientProfile = {
   client_student_plan?: boolean
   client_student_id_image?: string
   student_account_status?: StudentAccountStatus
-  client_main_image?: string
-  client_sub_images?: string[]
-  client_mood?: string
-  client_features?: string
-  client_contact_photo?: string
+  contact_sns_type?: ContactSnsType
+  contact_sns_id?: string
 }
 
 export type JobBase = {
@@ -186,6 +186,8 @@ export type UserRecord = {
   client_student_plan?: boolean
   client_student_id_image?: string
   student_account_status?: StudentAccountStatus
+  contact_sns_type?: ContactSnsType
+  contact_sns_id?: string
   model_profile?: ModelProfile
   client_profile?: ClientProfile
   metrics?: Metrics

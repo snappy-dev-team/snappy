@@ -1,12 +1,10 @@
 "use client"
 
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
-import { getSessionUser, isLoggedIn } from '@/lib/auth'
-import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { UserRecord } from '@/lib/users'
+import { isLoggedIn } from '@/lib/auth'
 
 type ClientProfile = {
   client_display_name?: string
@@ -122,9 +120,8 @@ export default function JobDetailPage() {
         if (!jobsRes.ok || !usersRes.ok) throw new Error('failed to fetch job detail')
         const jobs = (await jobsRes.json()) as JobDetail[]
         const users = (await usersRes.json()) as Client[]
-        const matchedJob = jobs.find((item) => item.id === jobId) ?? null
-        const matchedClient =
-          matchedJob?.client_id != null ? users.find((user) => user.id === matchedJob.client_id) ?? null : null
+        const matchedJob = jobs.find(item => item.id === jobId) ?? null
+        const matchedClient = matchedJob?.client_id != null ? users.find(user => user.id === matchedJob.client_id) ?? null : null
         setJob(matchedJob)
         setClient(matchedClient)
       } catch (error) {
@@ -185,62 +182,7 @@ export default function JobDetailPage() {
       router.push(`/login?redirect=/jobs/${job.id}`)
       return
     }
-
-    if (!job.client_id) {
-      setApplyError('クライアント情報が不足しているため応募できません。')
-      return
-    }
-
-    const session = getSessionUser() as UserRecord | null
-    if (!session) {
-      router.push(`/login?redirect=/jobs/${job.id}`)
-      return
-    }
-
-    setApplicantName(
-      (session.model_profile as any)?.model_display_name ||
-        (session.model_signup_name ?? session.name) ||
-        'あなた',
-    )
-    setApplicantId(session.id)
-    setShowConfirm(true)
-  }
-
-  const handleConfirmApply = async () => {
-    if (!job?.id || !job.client_id) {
-      setApplyError('応募に必要な情報が不足しています。')
-      return
-    }
-    const session = getSessionUser() as UserRecord | null
-    if (!session) {
-      router.push(`/login?redirect=/jobs/${job.id}`)
-      return
-    }
-
-    setIsSubmitting(true)
-    setApplyError(null)
-    try {
-      const res = await fetch('/api/matches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          job_id: job.id,
-          model_user_id: session.id,
-          client_user_id: job.client_id,
-        }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.error ?? '応募の送信に失敗しました')
-      }
-      setApplyMessage('応募を受け付けました。担当者からの連絡をお待ちください。')
-      setShowConfirm(false)
-    } catch (error) {
-      console.error('apply failed', error)
-      setApplyError('応募の送信に失敗しました。時間をおいて再度お試しください。')
-    } finally {
-      setIsSubmitting(false)
-    }
+    router.push(`/apply/confirm?type=job&targetId=${job.id}`)
   }
 
   if (loading) {
@@ -271,7 +213,7 @@ export default function JobDetailPage() {
             <p className="text-sm text-muted-foreground">募集の詳細</p>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">{displayTitle}</h1>
             <p className="text-sm text-muted-foreground">
-              {clientDisplayName}
+              {client?.client_profile?.client_display_name || client?.name || 'クライアント名未設定'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -322,12 +264,16 @@ export default function JobDetailPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <DetailRow label="報酬">{reward}</DetailRow>
-              <DetailRow label="交通費">{job.job_reward_transport || '記載なし'}</DetailRow>
+              <DetailRow label="交通費">{(job as any).job_reward_transport || '記載なし'}</DetailRow>
               <DetailRow label="希望する条件">
-                {job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'}
+                {job?.account_type === 'student'
+                  ? job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'
+                  : job?.job_model_other_conditions || job?.job_model_hair_conditions || '記載なし'}
               </DetailRow>
               <DetailRow label="施術・撮影内容">
-                {job.job_service_contents || job.job_style_after || '記載なし'}
+                {job?.account_type === 'student'
+                  ? job.job_service_contents || job.job_style_after || '記載なし'
+                  : job?.job_service_contents || job?.job_style_after || '記載なし'}
               </DetailRow>
             </div>
 

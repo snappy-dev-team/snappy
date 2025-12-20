@@ -122,12 +122,12 @@ function SearchPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const initialTab = searchParams.get('tab') === 'models' ? 'models' : 'jobs'
-  const [activeTab, setActiveTab] = useState<'models' | 'jobs'>(initialTab)
   const [users, setUsers] = useState<UserRecord[]>([])
+  const [modelsApi, setModelsApi] = useState<UserRecord[]>([])
   const [jobCards, setJobCards] = useState<FeaturedCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const currentTab: 'models' | 'jobs' = searchParams.get('tab') === 'models' ? 'models' : 'jobs'
 
   // フィルター値をURLパラメータから取得
   const filters = useMemo(() => ({
@@ -140,27 +140,22 @@ function SearchPageContent() {
   }), [searchParams])
 
   useEffect(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam === 'clients') {
-      setActiveTab('jobs')
-    } else if (tabParam === 'models') {
-      setActiveTab('models')
-    }
-  }, [searchParams])
-
-  useEffect(() => {
     const fetchData = async () => {
       try {
-        const [jobsRes, usersRes] = await Promise.all([
+        const [jobsRes, usersRes, modelsRes] = await Promise.all([
           fetch('/api/jobs'),
-          listUsers()
+          listUsers(),
+          fetch('/api/models'),
         ])
         
         if (!jobsRes.ok) throw new Error('failed to fetch jobs')
+        if (!modelsRes.ok) throw new Error('failed to fetch models')
         const jobsData = (await jobsRes.json()) as ShopJob[]
         const usersData = usersRes
+        const modelsData = (await modelsRes.json()) as UserRecord[]
         
         setUsers(usersData)
+        setModelsApi(Array.isArray(modelsData) ? modelsData : [])
         
         // Build job cards (same as featured-shops.tsx)
         const clients = usersData.filter((user: any) => user.role === 'client')
@@ -216,7 +211,9 @@ function SearchPageContent() {
     const hairLabel = filters.hair ? hairStyleLabelMap[filters.hair] ?? filters.hair : ''
     const genderLabel = filters.gender ? genderLabelMap[filters.gender] ?? filters.gender : ''
 
-    return users
+    const usersOnlyModels = users.filter(user => (user.role ?? 'model') === 'model')
+    const source = usersOnlyModels.length > 0 ? usersOnlyModels : modelsApi
+    return source
       .filter(user => (user.role ?? 'model') === 'model')
       .filter(user => (user.model_profile as any)?.model_profile_visibility !== 'private')
       .filter(user => {
@@ -249,7 +246,7 @@ function SearchPageContent() {
 
         return matchesKeyword && matchesArea && matchesAge && matchesHair && matchesGender && matchesCategory
       })
-  }, [filters, users])
+  }, [filters, users, modelsApi])
 
   const filteredJobs = useMemo(() => {
     const kw = filters.keyword.trim().toLowerCase()
@@ -263,10 +260,6 @@ function SearchPageContent() {
     })
   }, [filters, jobCards])
 
-  const handleTabChange = (tab: 'models' | 'jobs') => {
-    setActiveTab(tab)
-  }
-
   const handleApplyClick = (e: React.MouseEvent, jobId?: number) => {
     e.preventDefault()
     e.stopPropagation()
@@ -277,7 +270,7 @@ function SearchPageContent() {
       return
     }
 
-    router.push(`/jobs/${jobId}`)
+    router.push(`/apply/confirm?type=job&targetId=${jobId}`)
   }
 
   return (
@@ -293,15 +286,14 @@ function SearchPageContent() {
         <header className="space-y-3">
           <p className="text-sm text-muted-foreground">検索結果</p>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            {activeTab === 'models' ? 'モデルを探す' : 'お仕事を探す'}
+            {currentTab === 'models' ? 'モデルを探す' : 'お仕事を探す'}
           </h1>
         </header>
 
         <section className="rounded-2xl border border-border bg-white/90 backdrop-blur shadow-xl shadow-primary/10 p-5 md:p-6">
           <SearchPanel 
             embedded 
-            initialTab={activeTab}
-            onTabChange={handleTabChange}
+            initialTab={currentTab}
             noContainer
           />
         </section>
@@ -312,13 +304,13 @@ function SearchPageContent() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              {activeTab === 'models'
+              {currentTab === 'models'
                 ? `モデルの候補を${filteredModels.length}件表示中`
                 : `お仕事の候補を${filteredJobs.length}件表示中`}
             </p>
           </div>
 
-          {activeTab === 'models' ? (
+          {currentTab === 'models' ? (
             filteredModels.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="w-16 h-16 mb-4 rounded-full bg-neutral-soft flex items-center justify-center">
@@ -334,23 +326,28 @@ function SearchPageContent() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredModels.map(item => (
+                {filteredModels.map((item, index) => (
                   <Link
-                    key={item.id}
-                    href={`/profile/${item.id}`}
+                    key={`${item.id}-${index}`}
+                    href={`/models/${item.id}`}
                     className="group relative block overflow-hidden rounded-2xl border border-border shadow-md hover:shadow-lg transition-all"
                   >
                     <div className="aspect-4/5 bg-neutral-100">
                       <img
-                        src={
-                          (item.model_profile as any)?.model_main_image ||
-                          'https://placehold.co/400x500?text=Profile'
-                        }
+                        src={(item.model_profile as any)?.model_main_image || 'https://placehold.co/400x500?text=Model'}
                         alt={(item.model_profile as any)?.model_display_name || 'プロフィール画像'}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="absolute inset-0 bg-linear-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                      <p className="text-sm font-semibold line-clamp-1">
+                        {(item.model_profile as any)?.model_display_name || item.model_signup_name || '名称未設定'}
+                      </p>
+                      <p className="text-xs text-white/80 line-clamp-1">
+                        {(item.model_profile as any)?.model_activity_area || 'エリア未設定'}
+                      </p>
+                    </div>
                   </Link>
                 ))}
               </div>

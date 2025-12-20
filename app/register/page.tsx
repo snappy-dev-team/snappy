@@ -39,24 +39,23 @@ type ClientFormState = {
 }
 
 const modelFields: { name: keyof ModelFormState; label: string; type?: string; required?: boolean }[] = [
-  { name: 'model_signup_name', label: '名前', required: true },
-  { name: 'model_signup_email', label: 'メールアドレス', required: true },
-  { name: 'model_signup_birthdate', label: '生年月日', type: 'date', required: true },
-  { name: 'model_signup_address', label: '住所', required: true },
-  { name: 'model_signup_password', label: 'パスワード', type: 'password', required: true },
-  { name: 'model_signup_password_confirm', label: 'パスワード（確認用）', type: 'password', required: true },
+  { name: 'model_signup_name', label: 'Name', required: true },
+  { name: 'model_signup_email', label: 'Email', required: true },
+  { name: 'model_signup_birthdate', label: 'Birthdate', type: 'date', required: true },
+  { name: 'model_signup_address', label: 'Address', required: true },
+  { name: 'model_signup_password', label: 'Password', type: 'password', required: true },
+  { name: 'model_signup_password_confirm', label: 'Password (Confirm)', type: 'password', required: true },
 ]
 
 const clientFields: { name: keyof ClientFormState; label: string; type?: string; required?: boolean }[] = [
-  { name: 'client_company_or_personal_name', label: '会社名（個人名）', required: true },
-  { name: 'client_contact_name', label: '担当者名', required: true },
-  { name: 'client_contact_gender', label: '担当者の性別', required: true },
-  { name: 'client_address', label: '所在地', required: true },
-  { name: 'client_email', label: 'メールアドレス', required: true },
-  { name: 'client_phone', label: '携帯電話番号', required: false },
-  { name: 'client_password', label: 'パスワード', type: 'password', required: true },
-  { name: 'client_password_confirm', label: 'パスワード（確認用）', type: 'password', required: true },
-  { name: 'client_student_id_image', label: '学生証画像（URL）', required: false },
+  { name: 'client_company_or_personal_name', label: 'Company or Personal Name', required: true },
+  { name: 'client_contact_name', label: 'Contact Name', required: true },
+  { name: 'client_contact_gender', label: 'Contact Gender', required: true },
+  { name: 'client_address', label: 'Address', required: true },
+  { name: 'client_email', label: 'Email', required: true },
+  { name: 'client_phone', label: 'Phone', required: false },
+  { name: 'client_password', label: 'Password', type: 'password', required: true },
+  { name: 'client_password_confirm', label: 'Password (Confirm)', type: 'password', required: true },
 ]
 
 function RegisterForm() {
@@ -96,17 +95,47 @@ function RegisterForm() {
   const currentForm = isModel ? modelForm : clientForm
 
   const handleModelChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+    const target = e.target as HTMLInputElement
+    if (target.type === 'checkbox') {
+      setModelForm(prev => ({ ...prev, [target.name]: target.checked }))
+      return
+    }
+    const { name, value } = target
     setModelForm(prev => ({ ...prev, [name]: value }))
   }
 
   const handleClientChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target as HTMLInputElement
     if (target.type === 'checkbox') {
-      setClientForm(prev => ({ ...prev, [target.name]: target.checked }))
+      const nextChecked = target.checked
+      setClientForm(prev => ({
+        ...prev,
+        [target.name]: nextChecked,
+        client_student_id_image: target.name === 'client_student_plan' && !nextChecked ? '' : prev.client_student_id_image,
+      }))
       return
     }
     setClientForm(prev => ({ ...prev, [target.name]: target.value }))
+  }
+
+  const handleStudentIdFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('画像ファイルを選択してください')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('画像サイズは5MB以下にしてください')
+      return
+    }
+    setError(null)
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const base64 = ev.target?.result as string
+      setClientForm(prev => ({ ...prev, client_student_id_image: base64 }))
+    }
+    reader.readAsDataURL(file)
   }
 
   const passwordsMatch = useMemo(() => {
@@ -135,7 +164,7 @@ function RegisterForm() {
 
     setSubmitting(true)
     try {
-      const payload: RegistrationPayload = isModel
+    const payload: RegistrationPayload = isModel
         ? ({ role: 'model', ...modelForm } as ModelSignupPayload)
         : ({
             role: 'client',
@@ -404,20 +433,48 @@ function RegisterForm() {
         </div>
 
         {clientForm.client_student_plan && (
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              学生証画像（URL） <span className="text-secondary">*</span>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              ????? <span className="text-secondary">*</span>
             </label>
-            <input
-              type="text"
-              name="client_student_id_image"
-              value={clientForm.client_student_id_image}
-              onChange={handleClientChange}
-              placeholder="https://example.com/student-id.jpg"
-              className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-              required
-            />
-            <p className="text-xs text-muted-foreground mt-1">有効期限がわかる写真をアップロードしてください。</p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                {clientForm.client_student_id_image ? (
+                  <img
+                    src={clientForm.client_student_id_image}
+                    alt="????????"
+                    className="w-24 h-24 object-cover rounded-lg border border-border"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">???????</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  id="student-id-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleStudentIdFileChange}
+                />
+                <label
+                  htmlFor="student-id-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors text-sm"
+                >
+                  ?????
+                </label>
+                {clientForm.client_student_id_image && (
+                  <button
+                    type="button"
+                    onClick={() => setClientForm(prev => ({ ...prev, client_student_id_image: '' }))}
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    ??
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">????????????????????????</p>
+            </div>
           </div>
         )}
       </div>
@@ -435,22 +492,23 @@ function RegisterForm() {
     const extra = isModel
       ? [
           {
-            label: '未成年フラグ',
+            label: 'Minor Flag',
             value: modelForm.model_signup_birthdate
-              ? new Date().getFullYear() - new Date(modelForm.model_signup_birthdate).getFullYear() < 20
-                ? '保護者同意が必要'
-                : '対象外'
+              ? (new Date().getFullYear() - new Date(modelForm.model_signup_birthdate).getFullYear() < 20
+                  ? 'Guardian consent needed'
+                  : 'Not a minor')
               : '-',
           },
         ]
       : [
-          { label: '学生プラン希望', value: clientForm.client_student_plan ? '希望する' : '希望しない' },
+          { label: 'Student Plan', value: clientForm.client_student_plan ? 'Yes' : 'No' },
           {
-            label: '学生証画像',
-            value: clientForm.client_student_plan ? clientForm.client_student_id_image || '未アップロード' : '-',
+            label: 'Student ID Image',
+            value: clientForm.client_student_plan
+              ? (clientForm.client_student_id_image ? 'Uploaded' : 'Not uploaded')
+              : '-',
           },
         ]
-
     return (
       <div className="rounded-xl border border-border bg-white shadow-sm">
         <div className="divide-y divide-border">
@@ -511,7 +569,9 @@ function RegisterForm() {
           {step === 'input' && (
             <div className="rounded-2xl border border-border bg-white shadow-sm p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">{isModel ? 'モデル登録フォーム' : 'クライアント登録フォーム'}</h2>
+              <h2 className="text-xl font-semibold text-foreground">
+                {isModel ? '新規登録フォーム（モデル）' : '新規登録フォーム（クライアント）'}
+              </h2>
                 <span className="text-xs text-muted-foreground">* は必須</span>
               </div>
 

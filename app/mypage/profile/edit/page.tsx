@@ -29,6 +29,8 @@ const emptyModelProfile: ModelProfile = {
   model_self_intro: '',
   model_achievements: '',
   model_profile_visibility: 'public',
+  contact_sns_type: '',
+  contact_sns_id: '',
 }
 
 const emptyClientProfile: ClientProfile = {
@@ -41,11 +43,8 @@ const emptyClientProfile: ClientProfile = {
   client_student_plan: false,
   client_student_id_image: '',
   student_account_status: 'pending',
-  client_main_image: '',
-  client_sub_images: [],
-  client_mood: '',
-  client_features: '',
-  client_contact_photo: '',
+  contact_sns_type: '',
+  contact_sns_id: '',
 }
 
 export default function ProfileEditPage() {
@@ -53,6 +52,7 @@ export default function ProfileEditPage() {
   const [user, setUser] = useState<UserRecord | null>(null)
   const [modelProfile, setModelProfile] = useState<ModelProfile>(emptyModelProfile)
   const [clientProfile, setClientProfile] = useState<ClientProfile>(emptyClientProfile)
+  const [clientEmail, setClientEmail] = useState<string>('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,6 +65,7 @@ export default function ProfileEditPage() {
     setUser(session)
     if (session.model_profile) setModelProfile(session.model_profile as ModelProfile)
     if (session.client_profile) setClientProfile(session.client_profile as ClientProfile)
+    if (session.email) setClientEmail(session.email)
   }, [router])
 
   const isModel = user?.role === 'model'
@@ -78,7 +79,7 @@ export default function ProfileEditPage() {
         ? { model_profile: modelProfile }
         : (() => {
             const { student_account_status: _ignoredStatus, ...clientProfilePayload } = clientProfile
-            return { client_profile: clientProfilePayload }
+            return { client_profile: clientProfilePayload, email: clientEmail }
           })()
 
       const updated = await updateUserProfile(user.id, updates)
@@ -180,6 +181,35 @@ export default function ProfileEditPage() {
               <TextareaField label="自己紹介" value={modelProfile.model_self_intro} onChange={v => setModelProfile(prev => ({ ...prev, model_self_intro: v }))} />
               <TextareaField label="実績" value={modelProfile.model_achievements} onChange={v => setModelProfile(prev => ({ ...prev, model_achievements: v }))} />
               <SelectField
+                label="SNS種別（管理者のみ閲覧）"
+                value={modelProfile.contact_sns_type ?? ''}
+                options={[
+                  { value: '', label: '選択してください' },
+                  { value: 'instagram', label: 'Instagram' },
+                  { value: 'twitter', label: 'Twitter' },
+                  { value: 'other', label: 'その他' },
+                ]}
+                onChange={v => setModelProfile(prev => ({ ...prev, contact_sns_type: v as any }))}
+                helper="SNSは管理者のみ確認します。メールアドレスは必須、SNSは任意です。"
+              />
+              {modelProfile.contact_sns_type === 'other' && (
+                <Field
+                  label="SNSプラットフォーム名（その他を選択した場合）"
+                  value={modelProfile.contact_sns_id ? modelProfile.contact_sns_id.split(':')[0] || '' : ''}
+                  onChange={v => {
+                    const idPart = modelProfile.contact_sns_id?.split(':')[1] ?? ''
+                    setModelProfile(prev => ({ ...prev, contact_sns_id: `${v}:${idPart}`.replace(/^:/, '') }))
+                  }}
+                  placeholder="例: LINE, TikTok など"
+                />
+              )}
+              <Field
+                label="SNS ID（管理者のみ閲覧）"
+                value={modelProfile.contact_sns_id ?? ''}
+                onChange={v => setModelProfile(prev => ({ ...prev, contact_sns_id: v }))}
+                placeholder="@example や ID を入力"
+              />
+              <SelectField
                 label="公開設定 *"
                 value={modelProfile.model_profile_visibility}
                 options={[
@@ -197,6 +227,7 @@ export default function ProfileEditPage() {
               <Field label="公開名 *" value={clientProfile.client_display_name} onChange={v => setClientProfile(prev => ({ ...prev, client_display_name: v }))} />
               <Field label="会社名（個人名） *" value={clientProfile.client_company_or_personal_name} onChange={v => setClientProfile(prev => ({ ...prev, client_company_or_personal_name: v }))} />
               <Field label="担当者名 *" value={clientProfile.client_contact_name} onChange={v => setClientProfile(prev => ({ ...prev, client_contact_name: v }))} />
+              <Field label="メールアドレス *" type="email" value={clientEmail} onChange={v => setClientEmail(v)} />
               <SelectField
                 label="担当者の性別 *"
                 value={clientProfile.client_contact_gender}
@@ -210,41 +241,44 @@ export default function ProfileEditPage() {
               <Field label="住所 *" value={clientProfile.client_address} onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))} />
               <Field label="電話番号" value={clientProfile.client_phone ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
               <Field label="学生証画像URL" value={clientProfile.client_student_id_image ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))} />
-              <ImageUploadField
-                label="店舗メイン画像"
-                value={clientProfile.client_main_image ?? ''}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_main_image: v }))}
+              <SelectField
+                label="SNS種別（管理者のみ閲覧）"
+                value={clientProfile.contact_sns_type ?? ''}
+                options={[
+                  { value: '', label: '選択してください' },
+                  { value: 'instagram', label: 'Instagram' },
+                  { value: 'twitter', label: 'Twitter' },
+                  { value: 'other', label: 'その他' },
+                ]}
+                onChange={v => setClientProfile(prev => ({ ...prev, contact_sns_type: v as any }))}
+                helper="SNSは管理者のみ確認します。メールアドレスは必須、SNSは任意です。"
               />
-              <MultiImageUploadField
-                label="店舗サブ画像（複数選択可）"
-                values={clientProfile.client_sub_images ?? []}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_sub_images: v }))}
-              />
-              <TextareaField
-                label="雰囲気・コンセプト"
-                value={clientProfile.client_mood ?? ''}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_mood: v }))}
-              />
-              <TextareaField
-                label="特徴（箇条書き推奨）"
-                value={clientProfile.client_features ?? ''}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_features: v }))}
-              />
-              <ImageUploadField
-                label="担当者顔写真"
-                value={clientProfile.client_contact_photo ?? ''}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_contact_photo: v }))}
+              {clientProfile.contact_sns_type === 'other' && (
+                <Field
+                  label="SNSプラットフォーム名（その他を選択した場合）"
+                  value={clientProfile.contact_sns_id ? clientProfile.contact_sns_id.split(':')[0] || '' : ''}
+                  onChange={v => {
+                    const idPart = clientProfile.contact_sns_id?.split(':')[1] ?? ''
+                    setClientProfile(prev => ({ ...prev, contact_sns_id: `${v}:${idPart}`.replace(/^:/, '') }))
+                  }}
+                  placeholder="例: LINE, TikTok など"
+                />
+              )}
+              <Field
+                label="SNS ID（管理者のみ閲覧）"
+                value={clientProfile.contact_sns_id ?? ''}
+                onChange={v => setClientProfile(prev => ({ ...prev, contact_sns_id: v }))}
+                placeholder="@example や ID を入力"
               />
 
-              <div className="space-y-2 text-sm md:col-span-2">
-                <span className="font-medium text-foreground">学生アカウントステータス</span>
-                <p className="px-4 py-2 rounded-lg border border-border bg-muted/20 text-foreground">
-                  {clientProfile.student_account_status ?? 'pending'}（変更は管理用マイページのみ）
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  学生アカウントの有効化・無効化は管理用マイページでのみ設定できます。個人マイページからは変更できません。
-                </p>
-              </div>
+              {clientProfile.client_student_plan && (
+                <div className="space-y-2 text-sm md:col-span-2">
+                  <span className="font-medium text-foreground">学生アカウントステータス</span>
+                  <p className="px-4 py-2 rounded-lg border border-border bg-muted/20 text-foreground">
+                    {clientProfile.student_account_status ?? 'pending'}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         )}
