@@ -239,25 +239,56 @@ export default function JobDetailPage() {
                 </span>
               </div>
 
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold">募集概要</h2>
-                <p className="text-sm text-foreground leading-relaxed">{description || '詳細は未入力です。'}</p>
-              </div>
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold">募集概要</h2>
+              <p className="text-sm text-foreground leading-relaxed">{description || '詳細は未入力です。'}</p>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <DetailRow label="報酬">{reward}</DetailRow>
-                <DetailRow label="交通費">{(job as any).job_reward_transport || '記載なし'}</DetailRow>
-                <DetailRow label="希望する条件">
-                  {job?.account_type === 'student'
-                    ? job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'
-                    : job?.job_model_other_conditions || job?.job_model_hair_conditions || '記載なし'}
-                </DetailRow>
-                <DetailRow label="施術・撮影内容">
-                  {job?.account_type === 'student'
-                    ? job.job_service_contents || job.job_style_after || '記載なし'
-                    : job?.job_service_contents || job?.job_style_after || '記載なし'}
-                </DetailRow>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {job.account_type === 'student' ? (
+                <>
+                  <DetailRow label="募集タイトル">{job.job_title_student || '記載なし'}</DetailRow>
+                  <DetailRow label="目的">{job.job_purpose_student || '記載なし'}</DetailRow>
+                  <DetailRow label="ジャンル">{job.job_genre_student || '記載なし'}</DetailRow>
+                  <DetailRow label="人数">{job.job_number_student || '記載なし'}</DetailRow>
+                  <DetailRow label="スタイリスト名">{job.job_stylist_name_student || '記載なし'}</DetailRow>
+                  <DetailRow label="学校名">{job.job_school_name_student || '記載なし'}</DetailRow>
+                  <DetailRow label="施術場所住所">{job.job_location_address_student || '記載なし'}</DetailRow>
+                </>
+              ) : (
+                <>
+                  <DetailRow label="募集タイトル">{job.job_title_general || '記載なし'}</DetailRow>
+                  <DetailRow label="目的">{job.job_purpose_general || '記載なし'}</DetailRow>
+                  <DetailRow label="ジャンル">{job.job_genre_general || '記載なし'}</DetailRow>
+                  <DetailRow label="人数">{job.job_number_general || '記載なし'}</DetailRow>
+                  <DetailRow label="店名">{job.job_salon_name_general || '記載なし'}</DetailRow>
+                  <DetailRow label="店名エリア">{job.job_salon_area_general || '記載なし'}</DetailRow>
+                  <DetailRow label="最寄り駅">{job.job_nearest_station_general || '記載なし'}</DetailRow>
+                  <DetailRow label="店の雰囲気">{job.job_salon_mood_general || '記載なし'}</DetailRow>
+                  <DetailRow label="担当スタイリスト名">{job.job_stylist_name_general || '記載なし'}</DetailRow>
+                </>
+              )}
+              <DetailRow label="モデルの性別条件">{job.job_model_gender || '記載なし'}</DetailRow>
+              <DetailRow label="年齢・年代">{job.job_model_age_range || '記載なし'}</DetailRow>
+              <DetailRow label="髪の条件">{job.job_model_hair_conditions || '記載なし'}</DetailRow>
+              <DetailRow label="顔出し範囲">{job.job_model_face_visibility || '記載なし'}</DetailRow>
+              <DetailRow label="経験">{job.job_model_experience || '記載なし'}</DetailRow>
+              <DetailRow label="その他条件">{job.job_model_other_conditions || '記載なし'}</DetailRow>
+              <DetailRow label="施術内容">{job.job_service_contents || '記載なし'}</DetailRow>
+              <DetailRow label="施術後スタイル">{job.job_style_after || '記載なし'}</DetailRow>
+              <DetailRow label="所要時間">{job.job_required_time || '記載なし'}</DetailRow>
+              <DetailRow label="服装・メイク">{job.job_dress_makeup || '記載なし'}</DetailRow>
+              <DetailRow label="同伴・撮影人数">{job.job_staff_count || '記載なし'}</DetailRow>
+              <DetailRow label="報酬区分">{job.job_reward_type || '記載なし'}</DetailRow>
+              <DetailRow label="報酬金額">{job.job_reward_cash || '記載なし'}</DetailRow>
+              <DetailRow label="交通費">{job.job_reward_transport || '記載なし'}</DetailRow>
+              <DetailRow label="報酬詳細">{job.job_reward_details || '記載なし'}</DetailRow>
+              <DetailRow label="日付候補">{job.job_date_candidates || '記載なし'}</DetailRow>
+              <DetailRow label="時間帯">{job.job_time_range || '記載なし'}</DetailRow>
+              <DetailRow label="撮影場所">{job.job_shoot_location || '記載なし'}</DetailRow>
+              <DetailRow label="集合場所">{job.job_meeting_point || '記載なし'}</DetailRow>
+              <DetailRow label="写真の使用範囲">{job.job_photo_usage_scope || '記載なし'}</DetailRow>
+            </div>
 
               <div className="flex justify-end">
                 <Button size="lg" onClick={handleApply}>

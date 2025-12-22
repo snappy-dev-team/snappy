@@ -51,6 +51,7 @@ type ShopJob = {
   id?: number
   account_type?: 'general' | 'student'
   client_id?: number
+  job_status?: 'active' | 'paused'
   job_title_general?: string
   job_purpose_general?: string
   job_genre_general?: string
@@ -162,7 +163,9 @@ function SearchPageContent() {
         const clients = usersData.filter((user: any) => user.role === 'client')
         const clientMap = new Map(clients.map((client: any) => [client.id, client as Client]))
 
-        const mapped: FeaturedCard[] = (jobsData ?? []).map((job) => {
+        const mapped: FeaturedCard[] = (jobsData ?? [])
+          .filter(job => (job.job_status ?? 'active') === 'active')
+          .map((job) => {
           const client = job.client_id ? clientMap.get(job.client_id) : undefined
           const displayTitle =
             job.account_type === 'student'

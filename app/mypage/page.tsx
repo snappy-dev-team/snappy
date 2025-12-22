@@ -1,12 +1,23 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
-import { clearSessionUser, getSessionUser } from '@/lib/auth'
-import { ClientProfile, ModelProfile, StudentAccountStatus, UserRecord, fetchMetrics, listUsers } from '@/lib/users'
+import { clearSessionUser, getSessionUser, setSessionUser } from '@/lib/auth'
+import {
+  ClientProfile,
+  ModelProfile,
+  StudentAccountStatus,
+  UserRecord,
+  deleteJob,
+  fetchMetrics,
+  listJobs,
+  listUsers,
+  updateJob,
+  updateUserProfile,
+} from '@/lib/users'
 import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, UserCog } from 'lucide-react'
 
 const emptyModelProfile: ModelProfile = {
@@ -63,7 +74,10 @@ export default function MyPage() {
   )
   const [modelProfile, setModelProfile] = useState<ModelProfile>(emptyModelProfile)
   const [clientProfile, setClientProfile] = useState<ClientProfile>(emptyClientProfile)
+  const [clientJobs, setClientJobs] = useState<any[]>([])
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const modelPhotoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const session = getSessionUser()
@@ -94,6 +108,17 @@ export default function MyPage() {
         return fetchMetrics(user.id)
       })
       .then(fetchedMetrics => fetchedMetrics && setMetrics(fetchedMetrics))
+      .then(() => listJobs())
+      .then(jobs => {
+        if (!user || user.role === 'model') return
+        const allowStudent = Boolean(user.client_student_plan ?? user.client_profile?.client_student_plan)
+        const normalizedId = Number(user.id)
+        setClientJobs(
+          (jobs ?? [])
+            .filter(job => Number(job.client_id) === normalizedId)
+            .filter(job => (allowStudent ? true : job.account_type !== 'student')),
+        )
+      })
       .catch(err => {
         console.error('Failed to refresh user or metrics', err)
         setError('情報の取得に失敗しました。時間をおいて再度お試しください。')
@@ -113,6 +138,75 @@ export default function MyPage() {
   const handleLogout = () => {
     clearSessionUser()
     router.replace('/login')
+  }
+
+  const handleUpdateJobStatus = async (jobId: number, status: 'active' | 'paused') => {
+    setError(null)
+    try {
+      if (!user) return
+      const updated = await updateJob(jobId, user.id, { job_status: status })
+      setClientJobs(prev => prev.map(job => (job.id === jobId ? updated : job)))
+    } catch (err) {
+      console.error(err)
+      setError('募集ステータスの更新に失敗しました。')
+    }
+  }
+
+  const handleDeleteJob = async (jobId: number) => {
+    setError(null)
+    try {
+      if (!user) return
+      await deleteJob(jobId, user.id)
+      setClientJobs(prev => prev.filter(job => job.id !== jobId))
+      setDeleteTargetId(null)
+    } catch (err) {
+      console.error(err)
+      setError('募集の削除に失敗しました。')
+    }
+  }
+
+  const jobStatusLabel = (status?: string) => (status === 'paused' ? '募集一時停止' : '募集中')
+  const jobTitle = (job: any) =>
+    job.account_type === 'student'
+      ? job.job_title_student || '学生募集'
+      : job.job_title_general || '一般募集'
+
+  const handleModelPhotoClick = () => {
+    if (!isModel) return
+    modelPhotoInputRef.current?.click()
+  }
+
+  const handleModelPhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !user) return
+    if (!file.type.startsWith('image/')) {
+      setError('画像ファイルを選択してください。')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('画像サイズは5MB以下にしてください。')
+      return
+    }
+
+    setError(null)
+    const reader = new FileReader()
+    reader.onload = async eventResult => {
+      const base64 = eventResult.target?.result as string
+      try {
+        const updated = await updateUserProfile(user.id, {
+          model_profile: { model_main_image: base64 },
+        })
+        setUser(updated)
+        setModelProfile(prev => ({ ...prev, model_main_image: base64 }))
+        setSessionUser(updated)
+      } catch (err) {
+        console.error(err)
+        setError('写真の更新に失敗しました。')
+      } finally {
+        if (modelPhotoInputRef.current) modelPhotoInputRef.current.value = ''
+      }
+    }
+    reader.readAsDataURL(file)
   }
 
   if (loading) {
@@ -149,12 +243,29 @@ export default function MyPage() {
         <section className="rounded-2xl border border-border bg-white shadow-sm p-6 md:p-8 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4 md:gap-6">
-              <div className="size-16 md:size-20 rounded-full bg-primary/10 flex items-center justify-center text-2xl text-primary">
-                {profileName.slice(0, 1).toUpperCase()}
-              </div>
+              {isModel ? (
+                <button
+                  type="button"
+                  onClick={handleModelPhotoClick}
+                  className="size-16 md:size-20 rounded-full overflow-hidden border border-border bg-neutral-100 flex items-center justify-center text-2xl text-primary"
+                >
+                  {modelProfile.model_main_image ? (
+                    <img src={modelProfile.model_main_image} alt={profileName} className="w-full h-full object-cover" />
+                  ) : (
+                    profileName.slice(0, 1).toUpperCase()
+                  )}
+                </button>
+              ) : (
+                <div className="size-16 md:size-20 rounded-full bg-primary/10 flex items-center justify-center text-2xl text-primary">
+                  {profileName.slice(0, 1).toUpperCase()}
+                </div>
+              )}
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">{profileName}</h1>
                 <p className="text-sm text-muted-foreground mt-1">{isModel ? 'モデル会員' : 'クライアント会員'}</p>
+                {isModel && (
+                  <p className="text-xs text-muted-foreground mt-1">写真をクリックして再アップロードできます。</p>
+                )}
                 {isStudentClient && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <ShieldCheck className="size-3 text-primary" />
@@ -164,6 +275,15 @@ export default function MyPage() {
               </div>
             </div>
           </div>
+          {isModel && (
+            <input
+              ref={modelPhotoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleModelPhotoChange}
+            />
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {statCards.map(stat => (
@@ -228,6 +348,67 @@ export default function MyPage() {
             )}
           </div>
         </section>
+
+        {!isModel && (
+          <section className="rounded-2xl border border-border bg-white shadow-sm">
+            <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">募集中の仕事一覧</h2>
+              <span className="text-xs text-muted-foreground">{clientJobs.length} 件</span>
+            </div>
+            {clientJobs.length === 0 ? (
+              <p className="p-4 text-sm text-muted-foreground">募集中の仕事はありません。</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {clientJobs.map(job => (
+                  <div key={job.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/mypage/jobs/${job.id}/edit`)}
+                        className="text-sm font-semibold text-foreground hover:underline text-left"
+                      >
+                        {jobTitle(job)}
+                      </button>
+                      <p className="text-xs text-muted-foreground">
+                        {job.account_type === 'student' ? '学生アカウント' : '一般アカウント'} / {jobStatusLabel(job.job_status)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={(job.job_status ?? 'active') === 'active' ? 'default' : 'outline'}
+                        onClick={() => handleUpdateJobStatus(job.id, 'active')}
+                      >
+                        募集中
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={(job.job_status ?? 'active') === 'paused' ? 'default' : 'outline'}
+                        onClick={() => handleUpdateJobStatus(job.id, 'paused')}
+                      >
+                        募集一時停止
+                      </Button>
+                      {deleteTargetId === job.id ? (
+                        <>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteJob(job.id)}>
+                            削除する
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setDeleteTargetId(null)}>
+                            キャンセル
+                          </Button>
+                        </>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => setDeleteTargetId(job.id)}>
+                          削除
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
     </div>
   )

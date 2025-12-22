@@ -78,6 +78,7 @@ export type JobBase = {
   createdAt?: string
   client_id: number
   account_type: 'general' | 'student'
+  job_status?: 'active' | 'paused'
 }
 
 export type JobGeneralPayload = JobBase & {
@@ -288,6 +289,28 @@ export async function createJob(payload: JobGeneralPayload | JobStudentPayload) 
   const data = await res.json().catch(() => null)
   if (!res.ok || !data?.ok) throw new Error(data?.error ?? '仕事募集の登録に失敗しました')
   return data.job as JobGeneralPayload | JobStudentPayload
+}
+
+export async function updateJob(id: number, clientId: number, updates: Partial<JobGeneralPayload | JobStudentPayload>) {
+  const res = await fetch('/api/jobs', {
+    method: 'PATCH',
+    headers: jsonHeaders,
+    body: JSON.stringify({ id, client_id: clientId, updates }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? '仕事募集の更新に失敗しました')
+  return data.job as JobGeneralPayload | JobStudentPayload
+}
+
+export async function deleteJob(id: number, clientId: number) {
+  const res = await fetch('/api/jobs', {
+    method: 'DELETE',
+    headers: jsonHeaders,
+    body: JSON.stringify({ id, client_id: clientId }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? '仕事募集の削除に失敗しました')
+  return data
 }
 
 export async function listMatches(): Promise<MatchRecord[]> {
