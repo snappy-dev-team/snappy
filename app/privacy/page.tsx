@@ -318,17 +318,8 @@ export default function PrivacyPage() {
           <section className="rounded-xl border border-border bg-white shadow-sm p-5 mb-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">第１２条（お問い合わせ窓口）</h2>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              本ポリシー、個人情報の取扱い、本サービスにおけるユーザー情報に関するご質問・ご相談・開示等のご請求は、下記窓口までご連絡ください。
+              本ポリシー、個人情報の取扱い、本サービスにおけるユーザー情報に関するご質問・ご相談・開示等のご請求は、ヘルプページのお問い合わせボタンよりご連絡ください。
             </p>
-            <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
-              <li>事業者の名称：＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿</li>
-              <li>所在地：＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿</li>
-              <li>代表者名：＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿</li>
-              <li>個人情報保護管理者：＿＿＿＿＿＿＿＿＿＿＿＿＿＿</li>
-              <li>お問い合わせ窓口部署名：＿＿＿＿＿＿＿＿＿＿＿＿＿＿</li>
-              <li>Eメールアドレス：＿＿＿＿＿＿＿＿＿＿＿＿＿＿</li>
-              <li>営業時間：＿＿＿＿＿＿＿＿（土日祝・当社所定の休業日を除く）</li>
-            </ul>
           </section>
 
           <p className="text-sm text-muted-foreground text-right mt-8">以上</p>

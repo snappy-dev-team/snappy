@@ -65,6 +65,7 @@ type ShopJob = {
   job_purpose_student?: string
   job_location_address_student?: string
   job_sns_student?: string
+  job_portfolio_images_student?: string[]
 }
 
 type FeaturedCard = {
@@ -179,7 +180,7 @@ function SearchPageContent() {
           const image =
             job.account_type === 'general'
               ? job.job_portfolio_images_general?.[0]
-              : undefined
+              : job.job_portfolio_images_student?.[0]
 
           return {
             job,

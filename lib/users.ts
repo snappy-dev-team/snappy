@@ -59,6 +59,11 @@ export type ClientProfile = {
   client_company_or_personal_name: string
   client_contact_name: string
   client_contact_gender: Gender | ''
+  client_main_image: string
+  client_sub_images: string[]
+  client_shop_mood: string
+  client_shop_features: string
+  client_contact_image: string
   client_address: string
   client_phone?: string
   client_student_plan?: boolean
@@ -118,6 +123,7 @@ export type JobStudentPayload = JobBase & {
   job_school_name_student: string
   job_location_address_student: string
   job_sns_student: string
+  job_portfolio_images_student: string[]
   job_model_gender: string
   job_model_age_range: string
   job_model_hair_conditions: string

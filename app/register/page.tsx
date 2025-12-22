@@ -435,18 +435,18 @@ function RegisterForm() {
         {clientForm.client_student_plan && (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground mb-1">
-              ????? <span className="text-secondary">*</span>
+              学生証画像 <span className="text-secondary">*</span>
             </label>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 {clientForm.client_student_id_image ? (
                   <img
                     src={clientForm.client_student_id_image}
-                    alt="????????"
+                    alt="学生証プレビュー"
                     className="w-24 h-24 object-cover rounded-lg border border-border"
                   />
                 ) : (
-                  <span className="text-xs text-muted-foreground">???????</span>
+                  <span className="text-xs text-muted-foreground">学生証画像をアップロードしてください</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ function RegisterForm() {
                   htmlFor="student-id-upload"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors text-sm"
                 >
-                  ?????
+                  画像を選択
                 </label>
                 {clientForm.client_student_id_image && (
                   <button
@@ -469,11 +469,11 @@ function RegisterForm() {
                     onClick={() => setClientForm(prev => ({ ...prev, client_student_id_image: '' }))}
                     className="text-sm text-muted-foreground hover:text-foreground"
                   >
-                    ??
+                    削除
                   </button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">????????????????????????</p>
+              <p className="text-xs text-muted-foreground">画像は5MBまで。アップロード後に審査が行われます。</p>
             </div>
           </div>
         )}

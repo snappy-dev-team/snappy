@@ -38,6 +38,11 @@ const emptyClientProfile: ClientProfile = {
   client_company_or_personal_name: '',
   client_contact_name: '',
   client_contact_gender: '',
+  client_main_image: '',
+  client_sub_images: [],
+  client_shop_mood: '',
+  client_shop_features: '',
+  client_contact_image: '',
   client_address: '',
   client_phone: '',
   client_student_plan: false,
@@ -64,7 +69,7 @@ export default function ProfileEditPage() {
     }
     setUser(session)
     if (session.model_profile) setModelProfile(session.model_profile as ModelProfile)
-    if (session.client_profile) setClientProfile(session.client_profile as ClientProfile)
+    if (session.client_profile) setClientProfile({ ...emptyClientProfile, ...(session.client_profile as ClientProfile) })
     if (session.email) setClientEmail(session.email)
   }, [router])
 
@@ -227,6 +232,23 @@ export default function ProfileEditPage() {
               <Field label="公開名 *" value={clientProfile.client_display_name} onChange={v => setClientProfile(prev => ({ ...prev, client_display_name: v }))} />
               <Field label="会社名（個人名） *" value={clientProfile.client_company_or_personal_name} onChange={v => setClientProfile(prev => ({ ...prev, client_company_or_personal_name: v }))} />
               <Field label="担当者名 *" value={clientProfile.client_contact_name} onChange={v => setClientProfile(prev => ({ ...prev, client_contact_name: v }))} />
+              <ImageUploadField
+                label="担当者写真"
+                value={clientProfile.client_contact_image}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_contact_image: v }))}
+              />
+              <ImageUploadField
+                label="店舗メイン画像"
+                value={clientProfile.client_main_image}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_main_image: v }))}
+              />
+              <MultiImageUploadField
+                label="店舗サブ画像（複数選択可）"
+                values={clientProfile.client_sub_images}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_sub_images: v }))}
+              />
+              <Field label="店舗の雰囲気" value={clientProfile.client_shop_mood} onChange={v => setClientProfile(prev => ({ ...prev, client_shop_mood: v }))} />
+              <TextareaField label="店舗の特徴・こだわり" value={clientProfile.client_shop_features} onChange={v => setClientProfile(prev => ({ ...prev, client_shop_features: v }))} />
               <Field label="メールアドレス *" type="email" value={clientEmail} onChange={v => setClientEmail(v)} />
               <SelectField
                 label="担当者の性別 *"
@@ -240,7 +262,11 @@ export default function ProfileEditPage() {
               />
               <Field label="住所 *" value={clientProfile.client_address} onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))} />
               <Field label="電話番号" value={clientProfile.client_phone ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
-              <Field label="学生証画像URL" value={clientProfile.client_student_id_image ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))} />
+              <ImageUploadField
+                label="学生証画像"
+                value={clientProfile.client_student_id_image ?? ''}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))}
+              />
               <SelectField
                 label="SNS種別（管理者のみ閲覧）"
                 value={clientProfile.contact_sns_type ?? ''}

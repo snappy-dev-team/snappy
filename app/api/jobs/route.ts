@@ -27,6 +27,7 @@ type JobPayload = {
   job_school_name_student?: string
   job_location_address_student?: string
   job_sns_student?: string
+  job_portfolio_images_student?: string[]
   // shared conditions
   job_model_gender?: string
   job_model_age_range?: string
@@ -72,6 +73,7 @@ export async function POST(req: Request) {
       id: Date.now(),
       createdAt: now,
       job_portfolio_images_general: body.job_portfolio_images_general ?? [],
+      job_portfolio_images_student: body.job_portfolio_images_student ?? [],
     }
 
     jobs.push(job)
