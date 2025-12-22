@@ -19,6 +19,16 @@ const applicationStatusLabel: Record<ApplicationStatus, string> = {
   no_response: '未返信',
 }
 
+const formatDateTime = (value?: string) => {
+  if (!value) return '日時未設定'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '日時未設定'
+  return new Intl.DateTimeFormat('ja-JP', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
+
 export default function AdminPage() {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [applications, setApplications] = useState<ApplicationRecord[]>([])
@@ -280,7 +290,8 @@ function ApplicationsSection({
                 <p className="text-sm font-semibold text-foreground">
                   応募: {applicantName} ({app.applicant_role})
                 </p>
-                <p className="text-xs text-muted-foreground">対象: {target} / ステータス: {applicationStatusLabel[app.status]}</p>
+                <p className="text-xs text-muted-foreground">対象: {target}</p>
+                <p className="text-xs text-muted-foreground">応募日時: {formatDateTime(app.createdAt)}</p>
                 {contact && (
                   <p className="text-xs text-muted-foreground">
                     連絡先 (管理者のみ): {contact}

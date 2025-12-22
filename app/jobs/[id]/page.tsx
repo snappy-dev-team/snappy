@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { isLoggedIn } from '@/lib/auth'
@@ -9,11 +10,19 @@ import { isLoggedIn } from '@/lib/auth'
 type ClientProfile = {
   client_display_name?: string
   client_address?: string
+  client_main_image?: string
+  client_sub_images?: string[]
+  client_shop_mood?: string
+  client_shop_features?: string
+  client_contact_image?: string
+  client_contact_name?: string
 }
 
 type Client = {
   id: number
   name?: string
+  client_company_or_personal_name?: string
+  client_contact_name?: string
   client_profile?: ClientProfile
 }
 
@@ -66,6 +75,7 @@ type JobDetail =
       job_school_name_student?: string
       job_location_address_student?: string
       job_sns_student?: string
+      job_portfolio_images_student?: string[]
       job_model_gender?: string
       job_model_age_range?: string
       job_model_hair_conditions?: string
@@ -140,10 +150,20 @@ export default function JobDetailPage() {
       : job?.job_reward_type && /free|無償|無料/i.test(job.job_reward_type)
         ? '謝礼なし'
         : job?.job_reward_details || '謝礼未設定'
-  const heroImage =
-    job?.account_type === 'general' && Array.isArray(job.job_portfolio_images_general)
-      ? job.job_portfolio_images_general[0]
-      : FALLBACK_IMAGE
+  const imageList =
+    job?.account_type === 'student'
+      ? job.job_portfolio_images_student
+      : job?.job_portfolio_images_general
+  const heroImage = Array.isArray(imageList) && imageList[0] ? imageList[0] : FALLBACK_IMAGE
+  const subImages = Array.isArray(imageList) ? imageList.slice(1, 5).filter(Boolean) : []
+  const clientDisplayName =
+    client?.client_profile?.client_display_name || client?.client_company_or_personal_name || client?.name || 'クライアント名未設定'
+  const clientMainImage = client?.client_profile?.client_main_image || 'https://placehold.co/600x450?text=Salon'
+  const clientMood = client?.client_profile?.client_shop_mood || '雰囲気は未入力です。'
+  const clientFeatures = client?.client_profile?.client_shop_features || '特徴は未入力です。'
+  const clientContactName =
+    client?.client_profile?.client_contact_name || client?.client_contact_name || '担当者未設定'
+  const clientContactImage = client?.client_profile?.client_contact_image || 'https://placehold.co/120x120?text=Staff'
 
   const handleApply = () => {
     if (!job?.id) return
@@ -182,7 +202,7 @@ export default function JobDetailPage() {
             <p className="text-sm text-muted-foreground">募集の詳細</p>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">{displayTitle}</h1>
             <p className="text-sm text-muted-foreground">
-              {client?.client_profile?.client_display_name || client?.name || 'クライアント名未設定'}
+              {clientDisplayName}
             </p>
           </div>
           <Button variant="outline" onClick={() => router.back()}>
@@ -191,46 +211,93 @@ export default function JobDetailPage() {
         </div>
 
         <section className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
-          <div className="w-full aspect-video bg-neutral-100">
-            <img src={heroImage} alt={displayTitle} className="w-full h-full object-cover" />
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0">
+            <div className="p-6 md:p-8 space-y-3 bg-neutral-50">
+              <div className="w-full aspect-[4/3] max-h-[320px] bg-neutral-100 rounded-2xl overflow-hidden">
+                <img src={heroImage} alt={displayTitle} className="w-full h-full object-cover" />
+              </div>
+              {subImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {subImages.map((image, index) => (
+                    <div key={`${image}-${index}`} className="aspect-[4/3] bg-neutral-100 rounded-xl overflow-hidden">
+                      <img src={image} alt={`${displayTitle} ${index + 2}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="flex flex-wrap gap-2 text-xs md:text-sm text-muted-foreground">
+                <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
+                  {location}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-accent/20 text-foreground border border-border/60">
+                  {timeframe}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
+                  {job.account_type === 'student' ? '学生アカウント' : '一般アカウント'}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold">募集概要</h2>
+                <p className="text-sm text-foreground leading-relaxed">{description || '詳細は未入力です。'}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <DetailRow label="報酬">{reward}</DetailRow>
+                <DetailRow label="交通費">{(job as any).job_reward_transport || '記載なし'}</DetailRow>
+                <DetailRow label="希望する条件">
+                  {job?.account_type === 'student'
+                    ? job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'
+                    : job?.job_model_other_conditions || job?.job_model_hair_conditions || '記載なし'}
+                </DetailRow>
+                <DetailRow label="施術・撮影内容">
+                  {job?.account_type === 'student'
+                    ? job.job_service_contents || job.job_style_after || '記載なし'
+                    : job?.job_service_contents || job?.job_style_after || '記載なし'}
+                </DetailRow>
+              </div>
+
+              <div className="flex justify-end">
+                <Button size="lg" onClick={handleApply}>
+                  応募する
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="p-6 md:p-8 space-y-6">
-            <div className="flex flex-wrap gap-2 text-xs md:text-sm text-muted-foreground">
-              <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
-                {location}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-accent/20 text-foreground border border-border/60">
-                {timeframe}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
-                {job.account_type === 'student' ? '学生アカウント' : '一般アカウント'}
-              </span>
-            </div>
+        </section>
 
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold">募集概要</h2>
-              <p className="text-sm text-foreground leading-relaxed">{description || '詳細は未入力です。'}</p>
+        <section className="rounded-2xl border border-border bg-white shadow-sm p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="w-full md:w-1/2">
+              <div className="aspect-[4/3] bg-neutral-100 rounded-2xl overflow-hidden">
+                <img src={clientMainImage} alt={clientDisplayName} className="w-full h-full object-cover" />
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <DetailRow label="報酬">{reward}</DetailRow>
-              <DetailRow label="交通費">{(job as any).job_reward_transport || '記載なし'}</DetailRow>
-              <DetailRow label="希望する条件">
-                {job?.account_type === 'student'
-                  ? job.job_model_other_conditions || job.job_model_hair_conditions || '記載なし'
-                  : job?.job_model_other_conditions || job?.job_model_hair_conditions || '記載なし'}
-              </DetailRow>
-              <DetailRow label="施術・撮影内容">
-                {job?.account_type === 'student'
-                  ? job.job_service_contents || job.job_style_after || '記載なし'
-                  : job?.job_service_contents || job?.job_style_after || '記載なし'}
-              </DetailRow>
-            </div>
-
-            <div className="flex justify-end">
-              <Button size="lg" onClick={handleApply}>
-                応募する
-              </Button>
+            <div className="flex-1 space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">クライアント紹介</p>
+                <h2 className="text-xl font-semibold text-foreground">{clientDisplayName}</h2>
+                <p className="text-sm text-muted-foreground">{clientMood}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <img
+                  src={clientContactImage}
+                  alt={clientContactName}
+                  className="w-14 h-14 rounded-full object-cover border border-border"
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">{clientContactName}</p>
+                  <p className="text-xs text-muted-foreground">担当者</p>
+                </div>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed">{clientFeatures}</p>
+              {client?.id && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/clients/${client.id}`}>クライアント詳細を見る</Link>
+                </Button>
+              )}
             </div>
           </div>
         </section>

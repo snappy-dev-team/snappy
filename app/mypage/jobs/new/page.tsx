@@ -12,7 +12,9 @@ type GeneralForm = Omit<JobGeneralPayload, 'id' | 'createdAt' | 'job_portfolio_i
   job_portfolio_images_general: string
 }
 
-type StudentForm = Omit<JobStudentPayload, 'id' | 'createdAt'>
+type StudentForm = Omit<JobStudentPayload, 'id' | 'createdAt' | 'job_portfolio_images_student'> & {
+  job_portfolio_images_student: string
+}
 
 const emptyGeneralForm: GeneralForm = {
   client_id: 0,
@@ -61,6 +63,7 @@ const emptyStudentForm: StudentForm = {
   job_school_name_student: '',
   job_location_address_student: '',
   job_sns_student: '',
+  job_portfolio_images_student: '',
   job_model_gender: '',
   job_model_age_range: '',
   job_model_hair_conditions: '',
@@ -123,6 +126,7 @@ const labels: Record<string, string> = {
   job_school_name_student: '学校名',
   job_location_address_student: '施術場所住所',
   job_sns_student: 'SNS',
+  job_portfolio_images_student: '募集画像',
 }
 
 function JobNewContent() {
@@ -138,6 +142,66 @@ function JobNewContent() {
   const [studentForm, setStudentForm] = useState<StudentForm>(emptyStudentForm)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const parseJobImages = (value: string) =>
+    value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean)
+
+  const handleJobImageFiles = (files: FileList | null, formType: 'general' | 'student') => {
+    if (!files || files.length === 0) return
+    const fileArray = Array.from(files)
+
+    for (const file of fileArray) {
+      if (!file.type.startsWith('image/')) {
+        setError('画像ファイルを選択してください。')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('画像サイズは5MB以下にしてください。')
+        return
+      }
+    }
+
+    setError(null)
+    Promise.all(
+      fileArray.map(
+        file =>
+          new Promise<string>(resolve => {
+            const reader = new FileReader()
+            reader.onload = event => resolve(event.target?.result as string)
+            reader.readAsDataURL(file)
+          }),
+      ),
+    ).then(images => {
+      if (formType === 'general') {
+        setGeneralForm(prev => {
+          const merged = [...parseJobImages(prev.job_portfolio_images_general), ...images]
+          return { ...prev, job_portfolio_images_general: merged.join(',') }
+        })
+        return
+      }
+      setStudentForm(prev => {
+        const merged = [...parseJobImages(prev.job_portfolio_images_student), ...images]
+        return { ...prev, job_portfolio_images_student: merged.join(',') }
+      })
+    })
+  }
+
+  const handleRemoveJobImage = (index: number, formType: 'general' | 'student') => {
+    if (formType === 'general') {
+      setGeneralForm(prev => {
+        const next = parseJobImages(prev.job_portfolio_images_general).filter((_, i) => i !== index)
+        return { ...prev, job_portfolio_images_general: next.join(',') }
+      })
+      return
+    }
+    setStudentForm(prev => {
+      const next = parseJobImages(prev.job_portfolio_images_student).filter((_, i) => i !== index)
+      return { ...prev, job_portfolio_images_student: next.join(',') }
+    })
+  }
 
   useEffect(() => {
     const session = getSessionUser()
@@ -162,7 +226,13 @@ function JobNewContent() {
           setError('学生アカウントのみ学生向け募集を作成できます。')
           return
         }
-        const payload: JobStudentPayload = { ...studentForm, account_type: 'student' }
+        const payload: JobStudentPayload = {
+          ...studentForm,
+          account_type: 'student',
+          job_portfolio_images_student: studentForm.job_portfolio_images_student
+            ? studentForm.job_portfolio_images_student.split(',').map(item => item.trim()).filter(Boolean)
+            : [],
+        }
         await createJob(payload)
         setStudentForm({ ...emptyStudentForm, client_id: user.id })
         setMessage('学生アカウントの仕事募集を登録しました。')
@@ -189,9 +259,121 @@ function JobNewContent() {
     const entries = Object.entries(usingStudentForm ? studentForm : generalForm).filter(
       ([key]) => key !== 'client_id' && key !== 'account_type',
     )
-    return entries.map(([key, value]) => (
-      <label key={key} className="space-y-2 text-sm">
-        <span className="font-medium text-foreground">{labels[key] ?? key}</span>
+    return entries.map(([key, value]) => {
+      if (key === 'job_portfolio_images_general' && !usingStudentForm) {
+        const images = parseJobImages(generalForm.job_portfolio_images_general)
+        return (
+          <div key={key} className="space-y-2 text-sm md:col-span-2">
+            <span className="font-medium text-foreground">募集画像</span>
+            <div className="space-y-3">
+              {images.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {images.map((image, index) => (
+                    <div key={`${image}-${index}`} className="relative inline-block">
+                      <img
+                        src={image}
+                        alt={`募集画像 ${index + 1}`}
+                        className="w-28 h-28 object-cover rounded-lg border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveJobImage(index, 'general')}
+                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full px-2 py-1 text-[10px]"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  id="job-image-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => handleJobImageFiles(e.target.files, 'general')}
+                />
+                <label
+                  htmlFor="job-image-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors text-sm"
+                >
+                  画像を追加
+                </label>
+                <span className="text-xs text-muted-foreground">最大5MBまで</span>
+              </div>
+              <textarea
+                value={generalForm.job_portfolio_images_general}
+                onChange={e => setGeneralForm(prev => ({ ...prev, job_portfolio_images_general: e.target.value }))}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-border"
+                placeholder="画像URLをカンマ区切りで入力も可能です"
+              />
+            </div>
+          </div>
+        )
+      }
+      if (key === 'job_portfolio_images_student' && usingStudentForm) {
+        const images = parseJobImages(studentForm.job_portfolio_images_student)
+        return (
+          <div key={key} className="space-y-2 text-sm md:col-span-2">
+            <span className="font-medium text-foreground">募集画像</span>
+            <div className="space-y-3">
+              {images.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {images.map((image, index) => (
+                    <div key={`${image}-${index}`} className="relative inline-block">
+                      <img
+                        src={image}
+                        alt={`募集画像 ${index + 1}`}
+                        className="w-28 h-28 object-cover rounded-lg border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveJobImage(index, 'student')}
+                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full px-2 py-1 text-[10px]"
+                        disabled={studentLocked}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  id="job-image-upload-student"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => handleJobImageFiles(e.target.files, 'student')}
+                  disabled={studentLocked}
+                />
+                <label
+                  htmlFor="job-image-upload-student"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors text-sm"
+                >
+                  画像を追加
+                </label>
+                <span className="text-xs text-muted-foreground">最大5MBまで</span>
+              </div>
+              <textarea
+                value={studentForm.job_portfolio_images_student}
+                onChange={e => setStudentForm(prev => ({ ...prev, job_portfolio_images_student: e.target.value }))}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-border"
+                placeholder="画像URLをカンマ区切りで入力も可能です"
+                disabled={studentLocked}
+              />
+            </div>
+          </div>
+        )
+      }
+      return (
+        <label key={key} className="space-y-2 text-sm">
+          <span className="font-medium text-foreground">{labels[key] ?? key}</span>
         <textarea
           value={value as string}
           onChange={e =>
@@ -204,7 +386,8 @@ function JobNewContent() {
           disabled={(isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')}
         />
       </label>
-    ))
+      )
+    })
   }
 
   if (!user) return null

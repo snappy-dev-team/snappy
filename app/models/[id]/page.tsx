@@ -37,6 +37,7 @@ export default function ModelDetailPage() {
   const profile = modelUser?.model_profile as any
   const displayName = profile?.model_display_name || modelUser?.model_signup_name || modelUser?.name || '名称未設定'
   const mainImage = profile?.model_main_image || 'https://placehold.co/800x500?text=Model'
+  const subImages = Array.isArray(profile?.model_sub_images) ? profile.model_sub_images.filter(Boolean).slice(0, 4) : []
 
   const handleApply = () => {
     if (!modelUser?.id) return
@@ -81,10 +82,22 @@ export default function ModelDetailPage() {
         </div>
 
         <section className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
-          <div className="w-full aspect-video bg-neutral-100">
-            <img src={mainImage} alt={displayName} className="w-full h-full object-cover" />
-          </div>
-          <div className="p-6 md:p-8 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0">
+            <div className="p-6 md:p-8 space-y-3 bg-neutral-50">
+              <div className="w-full aspect-[4/3] max-h-[320px] bg-neutral-100 rounded-2xl overflow-hidden">
+                <img src={mainImage} alt={displayName} className="w-full h-full object-cover" />
+              </div>
+              {subImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {subImages.map((image: string, index: number) => (
+                    <div key={`${image}-${index}`} className="aspect-[4/3] bg-neutral-100 rounded-xl overflow-hidden">
+                      <img src={image} alt={`${displayName} ${index + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-6 md:p-8 space-y-6">
             <div className="flex flex-wrap gap-2 text-xs md:text-sm text-muted-foreground">
               <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">
                 {profile?.model_activity_area || '活動エリア未設定'}
@@ -107,6 +120,7 @@ export default function ModelDetailPage() {
               <Button size="lg" onClick={handleApply}>
                 応募する
               </Button>
+            </div>
             </div>
           </div>
         </section>
