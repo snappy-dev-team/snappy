@@ -38,6 +38,14 @@ export default function ModelDetailPage() {
   const displayName = profile?.model_display_name || modelUser?.model_signup_name || modelUser?.name || '名称未設定'
   const mainImage = profile?.model_main_image || 'https://placehold.co/800x500?text=Model'
   const subImages = Array.isArray(profile?.model_sub_images) ? profile.model_sub_images.filter(Boolean).slice(0, 4) : []
+  const genderLabel =
+    profile?.model_gender === 'male'
+      ? '男性'
+      : profile?.model_gender === 'female'
+        ? '女性'
+        : profile?.model_gender === 'other'
+          ? 'その他'
+          : ''
 
   const handleApply = () => {
     if (!modelUser?.id) return
@@ -105,15 +113,31 @@ export default function ModelDetailPage() {
               <span className="px-3 py-1 rounded-full bg-accent/20 text-foreground border border-border/60">
                 {profile?.model_job_category || '職業未設定'}
               </span>
+              <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
+                {genderLabel || '性別未設定'}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-neutral-soft text-foreground border border-border/60">
+                {profile?.model_height ? `${profile.model_height}cm` : '身長未設定'}
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <DetailRow label="自己紹介">{profile?.model_self_intro || '未入力'}</DetailRow>
-              <DetailRow label="趣味">{profile?.model_hobbies || '未入力'}</DetailRow>
+              <DetailRow label="自己紹介" fullWidth>
+                {profile?.model_self_intro || '未入力'}
+              </DetailRow>
+              <DetailRow label="趣味" fullWidth>
+                {profile?.model_hobbies || '未入力'}
+              </DetailRow>
               <DetailRow label="髪型">{profile?.model_hair_style || '未入力'}</DetailRow>
               <DetailRow label="体形">{profile?.model_body_type || '未入力'}</DetailRow>
               <DetailRow label="職業">{profile?.model_job_category || '未入力'}</DetailRow>
+              <DetailRow label="活動地域">{profile?.model_activity_area || '未入力'}</DetailRow>
+              <DetailRow label="性別">{genderLabel || '未入力'}</DetailRow>
+              <DetailRow label="身長">{profile?.model_height ? `${profile.model_height}cm` : '未入力'}</DetailRow>
               <DetailRow label="避けたい条件">{profile?.model_ng_conditions || '未入力'}</DetailRow>
+              <DetailRow label="実績" fullWidth>
+                {profile?.model_achievements || '未入力'}
+              </DetailRow>
             </div>
 
             <div className="flex justify-end">
@@ -129,9 +153,17 @@ export default function ModelDetailPage() {
   )
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailRow({
+  label,
+  children,
+  fullWidth = false,
+}: {
+  label: string
+  children: React.ReactNode
+  fullWidth?: boolean
+}) {
   return (
-    <div className="space-y-1">
+    <div className={`space-y-1 ${fullWidth ? 'md:col-span-2' : ''}`}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <div className="p-3 rounded-xl border border-border bg-neutral-soft/60 text-foreground">{children}</div>
     </div>

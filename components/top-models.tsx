@@ -147,7 +147,7 @@ export default function TopModels() {
                         <div>
                           <p className="font-semibold text-foreground text-sm truncate">{model.displayName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {model.displayAge ? `${model.displayAge}?` : '????E'} / {model.activityArea}
+                            {model.displayAge ? `${model.displayAge}` : '年齢未設定'} / {model.activityArea}
                           </p>
                         </div>
 
