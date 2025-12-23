@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { clearSessionUser, getSessionUser, setSessionUser } from '@/lib/auth'
 import {
   ClientProfile,
@@ -78,6 +79,7 @@ export default function MyPage() {
   const [clientProfile, setClientProfile] = useState<ClientProfile>(emptyClientProfile)
   const [clientJobs, setClientJobs] = useState<any[]>([])
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
+  const [deletingJob, setDeletingJob] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -174,6 +176,7 @@ export default function MyPage() {
 
   const handleDeleteJob = async (jobId: number) => {
     setError(null)
+    setDeletingJob(true)
     try {
       if (!user) return
       await deleteJob(jobId, user.id)
@@ -182,6 +185,8 @@ export default function MyPage() {
     } catch (err) {
       console.error(err)
       setError('募集の削除に失敗しました。')
+    } finally {
+      setDeletingJob(false)
     }
   }
 
@@ -411,25 +416,14 @@ export default function MyPage() {
                       >
                         編集
                       </Button>
-                      {deleteTargetId === job.id ? (
-                        <>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteJob(job.id)}>
-                            削除する
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setDeleteTargetId(null)}>
-                            キャンセル
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                          onClick={() => setDeleteTargetId(job.id)}
-                        >
-                          削除
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                        onClick={() => setDeleteTargetId(job.id)}
+                      >
+                        削除
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -446,40 +440,40 @@ export default function MyPage() {
           <p className="text-sm text-muted-foreground">
             アカウントを削除すると、すべてのデータが完全に削除され、復元できません。
           </p>
-          {showDeleteAccountConfirm ? (
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-destructive">
-                本当にアカウントを削除しますか？この操作は取り消せません。
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="destructive"
-                  disabled={deletingAccount}
-                  onClick={handleDeleteAccount}
-                >
-                  {deletingAccount ? '削除中...' : 'アカウントを削除する'}
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={deletingAccount}
-                  onClick={() => setShowDeleteAccountConfirm(false)}
-                >
-                  キャンセル
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive/10"
-              onClick={() => setShowDeleteAccountConfirm(true)}
-            >
-              <Trash2 className="size-4" />
-              アカウントを削除
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            className="border-destructive text-destructive hover:bg-destructive/10"
+            onClick={() => setShowDeleteAccountConfirm(true)}
+          >
+            <Trash2 className="size-4" />
+            アカウントを削除
+          </Button>
         </section>
       </main>
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={() => deleteTargetId && handleDeleteJob(deleteTargetId)}
+        title="募集を削除しますか？"
+        description="この募集を削除すると元に戻すことはできません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="destructive"
+        loading={deletingJob}
+      />
+
+      <ConfirmModal
+        open={showDeleteAccountConfirm}
+        onClose={() => setShowDeleteAccountConfirm(false)}
+        onConfirm={handleDeleteAccount}
+        title="アカウントを削除しますか？"
+        description="アカウントを削除すると、すべてのデータが完全に削除され、復元できません。この操作は取り消せません。"
+        confirmLabel="アカウントを削除する"
+        cancelLabel="キャンセル"
+        variant="destructive"
+        loading={deletingAccount}
+      />
     </div>
   )
 }
