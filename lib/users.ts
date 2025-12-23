@@ -1,3 +1,5 @@
+import { getSessionUser } from './auth'
+
 export type MemberRole = 'model' | 'client'
 export type StudentAccountStatus = 'pending' | 'approved' | 'rejected'
 export type ClientType = 'individual' | 'corporation'
@@ -272,7 +274,10 @@ export async function loginUser(email: string, password: string, role?: MemberRo
     throw new Error(message)
   }
 
-  return data.user as UserRecord
+  const user = data.user as UserRecord
+  // attach token if provided
+  if (data.token) (user as any).token = data.token
+  return user
 }
 
 export async function listJobs(): Promise<(JobGeneralPayload | JobStudentPayload)[]> {
@@ -324,6 +329,48 @@ export async function listReviews(): Promise<ReviewRecord[]> {
   const res = await fetch('/api/reviews', { cache: 'no-store' })
   if (!res.ok) throw new Error('レビューの取得に失敗しました')
   return res.json()
+}
+
+export async function createReview(payload: Partial<ReviewRecord>) {
+  const session = getSessionUser()
+  const headers: Record<string, string> = { ...jsonHeaders }
+  if (session && (session as any).token) headers['Authorization'] = `Bearer ${(session as any).token}`
+  const res = await fetch('/api/reviews', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? 'レビューの投稿に失敗しました')
+  return data.review as ReviewRecord
+}
+
+export async function updateReview(id: number, updates: Partial<ReviewRecord>) {
+  const session = getSessionUser()
+  const headers: Record<string, string> = { ...jsonHeaders }
+  if (session && (session as any).token) headers['Authorization'] = `Bearer ${(session as any).token}`
+  const res = await fetch('/api/reviews', {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ id, ...updates }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? 'レビューの更新に失敗しました')
+  return data.review as ReviewRecord
+}
+
+export async function deleteReview(id: number) {
+  const session = getSessionUser()
+  const headers: Record<string, string> = { ...jsonHeaders }
+  if (session && (session as any).token) headers['Authorization'] = `Bearer ${(session as any).token}`
+  const res = await fetch('/api/reviews', {
+    method: 'DELETE',
+    headers,
+    body: JSON.stringify({ id }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? 'レビューの削除に失敗しました')
+  return data
 }
 
 export async function fetchMetrics(userId: number): Promise<Metrics> {

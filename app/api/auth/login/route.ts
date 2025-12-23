@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
 
@@ -34,6 +34,7 @@ type LoginPayload = {
 
 const redis = Redis.fromEnv()
 const USERS_KEY = 'users'
+const SESSION_PREFIX = 'session:'
 
 const hashPassword = (password: string) => createHash('sha256').update(password).digest('hex')
 
@@ -64,7 +65,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
 
-    return NextResponse.json({ ok: true, user: sanitizeUser(user) })
+    // create a simple session token and store mapping to user id
+    const token = randomBytes(24).toString('hex')
+    await redis.set(`${SESSION_PREFIX}${token}`, String(user.id))
+
+    return NextResponse.json({ ok: true, user: sanitizeUser(user), token })
   } catch (error) {
     console.error('Login failed', error)
     return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })
