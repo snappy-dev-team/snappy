@@ -2,12 +2,15 @@
 
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
+import { SelectInput } from '@/components/ui/SelectInput'
+import { TextInput } from '@/components/ui/TextInput'
+import { Textarea } from '@/components/ui/Textarea'
+import { AREA_OPTIONS, AGE_RANGE_OPTIONS, DATE_RANGE_OPTIONS, GENDER_OPTIONS, HAIR_STYLE_OPTIONS } from '@/constants/search-options'
 import { clearSessionUser, getSessionUser } from '@/lib/auth'
 import { createJob, JobGeneralPayload, JobStudentPayload, StudentAccountStatus, UserRecord } from '@/lib/users'
-import { LogOut } from 'lucide-react'
+import { Camera, CalendarClock, CircleDollarSign, LogOut, MapPin, Sparkles, UserCheck, Wand2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
-import { AREA_OPTIONS, GENDER_OPTIONS, AGE_RANGE_OPTIONS, HAIR_STYLE_OPTIONS, DATE_RANGE_OPTIONS } from '@/constants/search-options'
+import { Suspense, useEffect, useState, type ReactNode } from 'react'
 
 type GeneralForm = Omit<JobGeneralPayload, 'id' | 'createdAt' | 'job_portfolio_images_general'> & {
   job_portfolio_images_general: string
@@ -94,11 +97,11 @@ const labels: Record<string, string> = {
   job_number_general: '人数',
   job_salon_name_general: '店名',
   job_salon_area_general: '店名エリア',
-  job_nearest_station_general: '最寄り駅',
+  job_nearest_station_general: '最寄駅',
   job_salon_mood_general: '店の雰囲気',
   job_stylist_name_general: '担当スタイリスト名',
   job_salon_sns_general: 'サロンSNS',
-  job_portfolio_images_general: '画像URL（カンマ区切り）',
+  job_portfolio_images_general: '募集画像',
   job_model_gender: 'モデルの性別条件',
   job_model_age_range: '年齢・年代',
   job_model_hair_conditions: '髪の条件',
@@ -110,7 +113,7 @@ const labels: Record<string, string> = {
   job_required_time: '所要時間',
   job_dress_makeup: '服装・メイク',
   job_staff_count: '同伴・撮影人数',
-  job_reward_type: '報酬区分（有償/無料など）',
+  job_reward_type: '報酬区分（有償/無償など）',
   job_reward_cash: '報酬金額',
   job_reward_transport: '交通費支給',
   job_reward_details: '報酬詳細',
@@ -130,37 +133,231 @@ const labels: Record<string, string> = {
   job_portfolio_images_student: '募集画像',
 }
 
+type FieldConfig = {
+  type?: 'text' | 'textarea' | 'select' | 'images'
+  required?: boolean
+  placeholder?: string
+  helperText?: string
+  rows?: number
+  options?: { value: string; label: string }[]
+}
+
+const fieldConfigs: Record<string, FieldConfig> = {
+  job_title_general: { type: 'text', required: true, placeholder: '例：撮影モデル募集' },
+  job_title_student: { type: 'text', required: true, placeholder: '例：学生向け撮影モデル募集' },
+  job_purpose_general: { type: 'textarea', required: true, rows: 3 },
+  job_purpose_student: { type: 'textarea', required: true, rows: 3 },
+  job_genre_general: { type: 'text', placeholder: '例：ヘアカタログ / SNS用' },
+  job_genre_student: { type: 'text', placeholder: '例：学内コンテスト / SNS用' },
+  job_number_general: { type: 'text', placeholder: '例：1〜2名' },
+  job_number_student: { type: 'text', placeholder: '例：2名' },
+  job_salon_name_general: { type: 'text', placeholder: '店舗名' },
+  job_salon_area_general: { type: 'select', options: AREA_OPTIONS },
+  job_nearest_station_general: { type: 'text', placeholder: '最寄駅・路線など' },
+  job_salon_mood_general: { type: 'textarea', rows: 2, placeholder: 'お店の雰囲気やこだわり' },
+  job_stylist_name_general: { type: 'text', placeholder: '担当スタイリスト名' },
+  job_stylist_name_student: { type: 'text', placeholder: '代表者名でも可' },
+  job_school_name_student: { type: 'text', placeholder: '学校名' },
+  job_location_address_student: { type: 'textarea', rows: 2, placeholder: '施術場所の住所や目印' },
+  job_sns_student: { type: 'text', placeholder: 'Instagram / TikTok など' },
+  job_salon_sns_general: { type: 'text', placeholder: 'Instagram / Webサイトなど' },
+  job_model_gender: { type: 'select', options: GENDER_OPTIONS, required: true },
+  job_model_age_range: { type: 'select', options: AGE_RANGE_OPTIONS },
+  job_model_hair_conditions: { type: 'select', options: HAIR_STYLE_OPTIONS },
+  job_model_face_visibility: { type: 'textarea', rows: 2, placeholder: '顔出しの可否・条件' },
+  job_model_experience: { type: 'textarea', rows: 2, placeholder: '希望する経験やスキル' },
+  job_model_other_conditions: { type: 'textarea', rows: 2, placeholder: 'その他の希望条件' },
+  job_service_contents: { type: 'textarea', rows: 3, placeholder: '施術内容の詳細' },
+  job_style_after: { type: 'textarea', rows: 2, placeholder: '仕上がりイメージ' },
+  job_required_time: { type: 'text', placeholder: '所要時間の目安' },
+  job_dress_makeup: { type: 'textarea', rows: 2, placeholder: '服装やメイクの指定' },
+  job_staff_count: { type: 'text', placeholder: '同席スタッフや撮影人数' },
+  job_reward_type: { type: 'text', placeholder: '有償 / 無償 / 商品提供 など' },
+  job_reward_cash: { type: 'text', placeholder: '金額目安や条件' },
+  job_reward_transport: { type: 'text', placeholder: '交通費の有無・上限' },
+  job_reward_details: { type: 'textarea', rows: 2, placeholder: '報酬の補足や備考' },
+  job_date_candidates: { type: 'select', options: DATE_RANGE_OPTIONS },
+  job_time_range: { type: 'select', options: DATE_RANGE_OPTIONS },
+  job_shoot_location: { type: 'text', placeholder: '撮影・施術場所' },
+  job_meeting_point: { type: 'text', placeholder: '集合場所や待ち合わせ詳細' },
+  job_photo_usage_scope: { type: 'textarea', rows: 3, placeholder: '写真の掲載媒体・期間・範囲など' },
+  job_portfolio_images_general: { type: 'images' },
+  job_portfolio_images_student: { type: 'images' },
+}
+
+type SectionConfig = {
+  title: string
+  icon: ReactNode
+  fields: string[]
+  description?: string
+  fullWidth?: boolean
+}
+
+const generalSections: SectionConfig[] = [
+  {
+    title: '募集概要',
+    icon: <Sparkles className="size-4" />,
+    fields: ['job_title_general', 'job_purpose_general', 'job_genre_general', 'job_number_general'],
+  },
+  {
+    title: 'サロン・担当情報',
+    icon: <MapPin className="size-4" />,
+    fields: [
+      'job_salon_name_general',
+      'job_salon_area_general',
+      'job_nearest_station_general',
+      'job_salon_mood_general',
+      'job_stylist_name_general',
+      'job_salon_sns_general',
+    ],
+  },
+  {
+    title: 'モデル条件',
+    icon: <UserCheck className="size-4" />,
+    fields: [
+      'job_model_gender',
+      'job_model_age_range',
+      'job_model_hair_conditions',
+      'job_model_face_visibility',
+      'job_model_experience',
+      'job_model_other_conditions',
+    ],
+  },
+  {
+    title: '施術・撮影内容',
+    icon: <Wand2 className="size-4" />,
+    fields: ['job_service_contents', 'job_style_after', 'job_required_time', 'job_dress_makeup', 'job_staff_count'],
+  },
+  {
+    title: '日程と場所',
+    icon: <CalendarClock className="size-4" />,
+    fields: ['job_date_candidates', 'job_time_range', 'job_shoot_location', 'job_meeting_point'],
+  },
+  {
+    title: '報酬・費用',
+    icon: <CircleDollarSign className="size-4" />,
+    fields: ['job_reward_type', 'job_reward_cash', 'job_reward_transport', 'job_reward_details'],
+  },
+  {
+    title: '写真の利用',
+    icon: <Camera className="size-4" />,
+    fields: ['job_photo_usage_scope'],
+    fullWidth: true,
+  },
+  {
+    title: '募集画像',
+    icon: <Camera className="size-4" />,
+    fields: ['job_portfolio_images_general'],
+    fullWidth: true,
+  },
+]
+
+const studentSections: SectionConfig[] = [
+  {
+    title: '募集概要',
+    icon: <Sparkles className="size-4" />,
+    fields: ['job_title_student', 'job_purpose_student', 'job_genre_student', 'job_number_student'],
+  },
+  {
+    title: '担当・学校情報',
+    icon: <MapPin className="size-4" />,
+    fields: [
+      'job_stylist_name_student',
+      'job_school_name_student',
+      'job_location_address_student',
+      'job_sns_student',
+    ],
+  },
+  {
+    title: 'モデル条件',
+    icon: <UserCheck className="size-4" />,
+    fields: [
+      'job_model_gender',
+      'job_model_age_range',
+      'job_model_hair_conditions',
+      'job_model_face_visibility',
+      'job_model_experience',
+      'job_model_other_conditions',
+    ],
+  },
+  {
+    title: '施術・撮影内容',
+    icon: <Wand2 className="size-4" />,
+    fields: ['job_service_contents', 'job_style_after', 'job_required_time', 'job_dress_makeup', 'job_staff_count'],
+  },
+  {
+    title: '日程と場所',
+    icon: <CalendarClock className="size-4" />,
+    fields: ['job_date_candidates', 'job_time_range', 'job_shoot_location', 'job_meeting_point'],
+  },
+  {
+    title: '報酬・費用',
+    icon: <CircleDollarSign className="size-4" />,
+    fields: ['job_reward_type', 'job_reward_cash', 'job_reward_transport', 'job_reward_details'],
+  },
+  {
+    title: '写真の利用',
+    icon: <Camera className="size-4" />,
+    fields: ['job_photo_usage_scope'],
+    fullWidth: true,
+  },
+  {
+    title: '募集画像',
+    icon: <Camera className="size-4" />,
+    fields: ['job_portfolio_images_student'],
+    fullWidth: true,
+  },
+]
+
 function JobNewContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const typeParam = searchParams.get('type')
-  const isStudent = typeParam === 'student'
+  const wantsStudentForm = searchParams.get('type') === 'student'
 
   const [user, setUser] = useState<UserRecord | null>(null)
   const [isStudentAccount, setIsStudentAccount] = useState(false)
   const [studentStatus, setStudentStatus] = useState<StudentAccountStatus>('pending')
   const [generalForm, setGeneralForm] = useState<GeneralForm>(emptyGeneralForm)
   const [studentForm, setStudentForm] = useState<StudentForm>(emptyStudentForm)
-  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    const session = getSessionUser()
+    if (!session) {
+      router.replace('/login?redirect=/mypage/jobs/new')
+      return
+    }
+    setUser(session)
+    setIsStudentAccount(Boolean(session.client_student_plan ?? session.client_profile?.client_student_plan))
+    setStudentStatus((session.student_account_status ?? 'pending') as StudentAccountStatus)
+    setGeneralForm(prev => ({ ...prev, client_id: session.id }))
+    setStudentForm(prev => ({ ...prev, client_id: session.id }))
+  }, [router])
+
+  const formType: 'general' | 'student' = wantsStudentForm ? 'student' : 'general'
+  const studentLocked = formType === 'student' && (!isStudentAccount || studentStatus !== 'approved')
+
   const parseJobImages = (value: string) =>
-    value
+    (value ?? '')
       .split(',')
       .map(item => item.trim())
       .filter(Boolean)
 
-  const handleJobImageFiles = (files: FileList | null, formType: 'general' | 'student') => {
+  const handleJobImageFiles = (files: FileList | null, targetForm: 'general' | 'student') => {
     if (!files || files.length === 0) return
+    if (targetForm === 'student' && studentLocked) {
+      setError('学生アカウントが承認されてから画像を追加できます')
+      return
+    }
     const fileArray = Array.from(files)
 
     for (const file of fileArray) {
       if (!file.type.startsWith('image/')) {
-        setError('画像ファイルを選択してください。')
+        setError('画像ファイルを選択してください')
         return
       }
       if (file.size > 5 * 1024 * 1024) {
-        setError('画像サイズは5MB以下にしてください。')
+        setError('画像サイズは5MB以下にしてください')
         return
       }
     }
@@ -176,7 +373,7 @@ function JobNewContent() {
           }),
       ),
     ).then(images => {
-      if (formType === 'general') {
+      if (targetForm === 'general') {
         setGeneralForm(prev => {
           const merged = [...parseJobImages(prev.job_portfolio_images_general), ...images]
           return { ...prev, job_portfolio_images_general: merged.join(',') }
@@ -190,49 +387,34 @@ function JobNewContent() {
     })
   }
 
-  const handleRemoveJobImage = (index: number, formType: 'general' | 'student') => {
-    if (formType === 'general') {
+  const handleRemoveJobImage = (index: number, targetForm: 'general' | 'student') => {
+    if (targetForm === 'general') {
       setGeneralForm(prev => {
         const next = parseJobImages(prev.job_portfolio_images_general).filter((_, i) => i !== index)
         return { ...prev, job_portfolio_images_general: next.join(',') }
       })
       return
     }
+    if (studentLocked) return
     setStudentForm(prev => {
       const next = parseJobImages(prev.job_portfolio_images_student).filter((_, i) => i !== index)
       return { ...prev, job_portfolio_images_student: next.join(',') }
     })
   }
 
-  useEffect(() => {
-    const session = getSessionUser()
-    if (!session) {
-      router.replace('/login?redirect=/mypage/jobs/new')
-      return
-    }
-    setUser(session)
-    setIsStudentAccount(Boolean(session.client_student_plan ?? session.client_profile?.client_student_plan))
-    setStudentStatus((session.student_account_status ?? 'pending') as StudentAccountStatus)
-    setGeneralForm(prev => ({ ...prev, client_id: session.id }))
-    setStudentForm(prev => ({ ...prev, client_id: session.id }))
-  }, [router])
-
   const handleSubmit = async () => {
     if (!user) return
-    setMessage(null)
     setError(null)
     try {
-      if (isStudent) {
-        if (!isStudentAccount) {
-          setError('学生アカウントのみ学生向け募集を作成できます。')
+      if (formType === 'student') {
+        if (studentLocked) {
+          setError('学生アカウントの承認後に学生向け募集を登録できます')
           return
         }
         const payload: JobStudentPayload = {
           ...studentForm,
           account_type: 'student',
-          job_portfolio_images_student: studentForm.job_portfolio_images_student
-            ? studentForm.job_portfolio_images_student.split(',').map(item => item.trim()).filter(Boolean)
-            : [],
+          job_portfolio_images_student: parseJobImages(studentForm.job_portfolio_images_student),
         }
         await createJob(payload)
         router.push('/mypage')
@@ -240,243 +422,241 @@ function JobNewContent() {
         const payload: JobGeneralPayload = {
           ...generalForm,
           account_type: 'general',
-          job_portfolio_images_general: generalForm.job_portfolio_images_general
-            ? generalForm.job_portfolio_images_general.split(',').map(item => item.trim()).filter(Boolean)
-            : [],
+          job_portfolio_images_general: parseJobImages(generalForm.job_portfolio_images_general),
         }
         await createJob(payload)
         router.push('/mypage')
       }
     } catch (err) {
       console.error(err)
-      setError('仕事募集の登録に失敗しました。')
+      setError('仕事募集の登録に失敗しました。時間をおいて再度お試しください')
     }
   }
 
-  const renderFields = () => {
-    const usingStudentForm = isStudent && isStudentAccount
-    const entries = Object.entries(usingStudentForm ? studentForm : generalForm).filter(
-      ([key]) => key !== 'client_id' && key !== 'account_type',
-    )
-    return entries.map(([key, value]) => {
-      if (key === 'job_portfolio_images_general' && !usingStudentForm) {
-        const images = parseJobImages(generalForm.job_portfolio_images_general)
-        return (
-          <div key={key} className="space-y-2 text-sm md:col-span-2">
-            <span className="font-medium text-foreground">募集画像</span>
-            <div className="space-y-3">
-              {images.length > 0 && (
-                <div className="flex flex-wrap gap-3">
-                  {images.map((image, index) => (
-                    <div key={`${image}-${index}`} className="relative inline-block">
-                      <img
-                        src={image}
-                        alt={`募集画像 ${index + 1}`}
-                        className="w-28 h-28 object-cover rounded-lg border border-border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveJobImage(index, 'general')}
-                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full px-2 py-1 text-[10px]"
-                      >
-                        削除
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  id="job-image-upload"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={e => handleJobImageFiles(e.target.files, 'general')}
-                />
-                <label
-                  htmlFor="job-image-upload"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors text-sm"
-                >
-                  画像を追加
-                </label>
-                <span className="text-xs text-muted-foreground">最大5MBまで</span>
-              </div>
-              <textarea
-                value={generalForm.job_portfolio_images_general}
-                onChange={e => setGeneralForm(prev => ({ ...prev, job_portfolio_images_general: e.target.value }))}
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-border"
-                placeholder="画像URLをカンマ区切りで入力も可能です"
-              />
-            </div>
-          </div>
-        )
-      }
-      if (key === 'job_portfolio_images_student' && usingStudentForm) {
-        const images = parseJobImages(studentForm.job_portfolio_images_student)
-        return (
-          <div key={key} className="space-y-2 text-sm md:col-span-2">
-            <span className="font-medium text-foreground">募集画像</span>
-            <div className="space-y-3">
-              {images.length > 0 && (
-                <div className="flex flex-wrap gap-3">
-                  {images.map((image, index) => (
-                    <div key={`${image}-${index}`} className="relative inline-block">
-                      <img
-                        src={image}
-                        alt={`募集画像 ${index + 1}`}
-                        className="w-28 h-28 object-cover rounded-lg border border-border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveJobImage(index, 'student')}
-                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full px-2 py-1 text-[10px]"
-                        disabled={studentLocked}
-                      >
-                        削除
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  id="job-image-upload-student"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={e => handleJobImageFiles(e.target.files, 'student')}
-                  disabled={studentLocked}
-                />
-                <label
-                  htmlFor="job-image-upload-student"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors text-sm"
-                >
-                  画像を追加
-                </label>
-                <span className="text-xs text-muted-foreground">最大5MBまで</span>
-              </div>
-              <textarea
-                value={studentForm.job_portfolio_images_student}
-                onChange={e => setStudentForm(prev => ({ ...prev, job_portfolio_images_student: e.target.value }))}
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-border"
-                placeholder="画像URLをカンマ区切りで入力も可能です"
-                disabled={studentLocked}
-              />
-            </div>
-          </div>
-        )
-      }
-      // プルダウン選択にするフィールド
-      const selectFieldOptions: Record<string, { value: string; label: string }[]> = {
-        job_model_gender: GENDER_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
-        job_model_age_range: AGE_RANGE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
-        job_model_hair_conditions: HAIR_STYLE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
-        job_salon_area_general: AREA_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
-        job_date_candidates: DATE_RANGE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
-      }
+  const updateField = (key: string, value: string) => {
+    if (formType === 'student') {
+      setStudentForm(prev => ({ ...prev, [key]: value }))
+      return
+    }
+    setGeneralForm(prev => ({ ...prev, [key]: value }))
+  }
 
-      if (selectFieldOptions[key]) {
-        return (
-          <label key={key} className="space-y-2 text-sm">
-            <span className="font-medium text-foreground">{labels[key] ?? key}</span>
-            <select
-              value={value as string}
-              onChange={e =>
-                isStudent
-                  ? setStudentForm(prev => ({ ...prev, [key]: e.target.value }))
-                  : setGeneralForm(prev => ({ ...prev, [key]: e.target.value }))
-              }
-              className="w-full px-3 py-2 rounded-lg border border-border"
-              disabled={(isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')}
-            >
-              {selectFieldOptions[key].map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+  const renderImageField = (key: string) => {
+    const value = formType === 'student' ? studentForm.job_portfolio_images_student : generalForm.job_portfolio_images_general
+    const images = parseJobImages(value)
+    const isStudentField = formType === 'student'
+
+    return (
+      <div key={key} className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-foreground">{labels[key] ?? key}</span>
+          <span className="text-xs text-muted-foreground">最大5MB / 複数可</span>
+        </div>
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {images.map((image, index) => (
+              <div key={`${image}-${index}`} className="relative inline-block">
+                <img src={image} alt={`${labels[key] ?? '募集画像'} ${index + 1}`} className="w-28 h-28 rounded-lg border border-border object-cover" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveJobImage(index, isStudentField ? 'student' : 'general')}
+                  className="absolute -top-2 -right-2 rounded-full bg-destructive px-2 py-1 text-[10px] text-white shadow"
+                  disabled={isStudentField && studentLocked}
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            id={`job-image-upload-${key}`}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => handleJobImageFiles(e.target.files, isStudentField ? 'student' : 'general')}
+            disabled={isStudentField && studentLocked}
+          />
+          <label
+            htmlFor={`job-image-upload-${key}`}
+            className={`inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors ${isStudentField && studentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-muted'}`}
+          >
+            画像を追加
           </label>
-        )
-      }
-
-      return (
-        <label key={key} className="space-y-2 text-sm">
-          <span className="font-medium text-foreground">{labels[key] ?? key}</span>
-        <textarea
-          value={value as string}
-          onChange={e =>
-            isStudent
-              ? setStudentForm(prev => ({ ...prev, [key]: e.target.value }))
-              : setGeneralForm(prev => ({ ...prev, [key]: e.target.value }))
-          }
+          {isStudentField && studentLocked && (
+            <span className="text-xs text-muted-foreground">学生アカウント承認後にアップロードできます</span>
+          )}
+        </div>
+        <Textarea
+          label="画像URLをカンマ区切りで入力（任意）"
           rows={2}
-          className="w-full px-3 py-2 rounded-lg border border-border"
-          disabled={(isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')}
+          value={value}
+          onChange={next => updateField(key, next)}
+          disabled={isStudentField && studentLocked}
+          helperText="URLを貼り付けても追加できます"
         />
-      </label>
+      </div>
+    )
+  }
+
+  const renderField = (key: string) => {
+    const config = fieldConfigs[key] ?? { type: 'textarea' }
+    if (config.type === 'images') return renderImageField(key)
+
+    const rawValue =
+      formType === 'student'
+        ? (studentForm as Record<string, string | number | undefined>)[key]
+        : (generalForm as Record<string, string | number | undefined>)[key]
+    const value = typeof rawValue === 'string' ? rawValue : rawValue !== undefined ? String(rawValue) : ''
+
+    if (config.type === 'select' && config.options) {
+      return (
+        <SelectInput
+          key={key}
+          label={labels[key] ?? key}
+          value={value}
+          options={config.options}
+          onChange={next => updateField(key, next)}
+          required={config.required}
+          placeholder={config.placeholder}
+          helperText={config.helperText}
+          disabled={formType === 'student' && studentLocked}
+        />
       )
-    })
+    }
+
+    if (config.type === 'text') {
+      return (
+        <TextInput
+          key={key}
+          label={labels[key] ?? key}
+          value={value}
+          onChange={next => updateField(key, next)}
+          required={config.required}
+          placeholder={config.placeholder}
+          helperText={config.helperText}
+          disabled={formType === 'student' && studentLocked}
+        />
+      )
+    }
+
+    return (
+      <Textarea
+        key={key}
+        label={labels[key] ?? key}
+        value={value}
+        onChange={next => updateField(key, next)}
+        rows={config.rows ?? 3}
+        required={config.required}
+        placeholder={config.placeholder}
+        helperText={config.helperText}
+        disabled={formType === 'student' && studentLocked}
+      />
+    )
+  }
+
+  const renderSections = () => {
+    const sections = formType === 'student' ? studentSections : generalSections
+    return sections.map(section => (
+      <FormSection
+        key={section.title}
+        title={section.title}
+        icon={section.icon}
+        description={section.description}
+      >
+        <div className={`grid grid-cols-1 gap-4 ${section.fullWidth ? '' : 'md:grid-cols-2'}`}>
+          {section.fields.map(renderField)}
+        </div>
+      </FormSection>
+    ))
   }
 
   if (!user) return null
 
-  const studentLocked = (isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-white to-white">
       <Header />
-      <main className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">仕事募集の追加</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              {isStudent ? '仕事募集（学生アカウント）' : '仕事募集（一般アカウント）'}
-            </h1>
-            {isStudent && (
-              <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                <p>学生ステータス: {studentStatus}。approved でない場合は入力できません。</p>
-                {!isStudentAccount && <p className="text-destructive">学生アカウントではないため学生募集は利用できません。</p>}
+      <main className="mx-auto max-w-6xl px-4 md:px-8 py-10 space-y-8">
+        <div className="flex flex-col gap-4 rounded-3xl border border-primary/20 bg-white/90 p-6 shadow-lg shadow-primary/10 backdrop-blur">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="space-y-2">
+              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-primary">
+                <Sparkles className="size-4" />
+                Job Studio
+              </p>
+              <h1 className="text-xl md:text-3xl font-bold text-foreground">
+                {formType === 'student' ? '仕事募集（学生アカウント）' : '仕事募集（一般アカウント）'}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
+                  {formType === 'student' ? '学生プラン向け' : '一般プラン向け'}
+                </span>
+                {formType === 'student' && (
+                  <span className="rounded-full bg-secondary/10 px-3 py-1 font-semibold text-secondary">
+                    学生ステータス：{studentStatus}
+                  </span>
+                )}
               </div>
-            )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => router.push('/mypage')}>
+                マイページへ戻る
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.push('/mypage')}>
-              マイページへ戻る
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-destructive text-destructive"
-              onClick={() => {
-                clearSessionUser()
-                router.replace('/login')
-              }}
-            >
-              <LogOut className="size-4" />
-              ログアウト
-            </Button>
-          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {formType === 'student' && !isStudentAccount && (
+            <div className="rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              学生アカウントの登録・承認が必要です。プロフィール編集から学生プランを申請してください。
+            </div>
+          )}
+          {formType === 'student' && studentStatus !== 'approved' && isStudentAccount && (
+            <div className="rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              学生アカウントの承認待ちです。承認完了後に入力・保存できるようになります。
+            </div>
+          )}
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {message && <p className="text-sm text-primary">{message}</p>}
+        <div className="space-y-6">{renderSections()}</div>
 
-        <section className="rounded-2xl border border-border bg-white shadow-sm p-6 md:p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{renderFields()}</div>
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              className="bg-primary text-primary-foreground"
-              disabled={studentLocked}
-            >
-              登録する
-            </Button>
-          </div>
-        </section>
+        <div className="sticky bottom-6 flex justify-end">
+          <Button
+            onClick={handleSubmit}
+            className="bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-primary/40"
+            disabled={formType === 'student' && studentLocked}
+          >
+            登録する
+          </Button>
+        </div>
       </main>
     </div>
+  )
+}
+
+function FormSection({
+  title,
+  icon,
+  children,
+  description,
+}: {
+  title: string
+  icon?: ReactNode
+  children: ReactNode
+  description?: string
+}) {
+  return (
+    <section className="overflow-hidden rounded-3xl border border-border bg-white/95 shadow-lg shadow-primary/10">
+      <div className="flex items-center gap-3 bg-gradient-to-r from-primary to-primary/80 px-4 py-3 text-primary-foreground">
+        <div className="size-8 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">{icon}</div>
+        <div className="flex flex-col">
+          <h3 className="text-sm font-semibold leading-tight">{title}</h3>
+          {description && <p className="text-xs text-primary-foreground/80">{description}</p>}
+        </div>
+      </div>
+      <div className="p-6 md:p-8 space-y-4">{children}</div>
+    </section>
   )
 }
 
