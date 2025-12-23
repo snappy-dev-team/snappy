@@ -1,6 +1,7 @@
-import { createHash, randomBytes } from 'crypto'
+import { createHash } from 'crypto'
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { createSession } from '@/lib/server/sessions'
 
 type StoredUser = {
   id: number
@@ -34,7 +35,6 @@ type LoginPayload = {
 
 const redis = Redis.fromEnv()
 const USERS_KEY = 'users'
-const SESSION_PREFIX = 'session:'
 
 const hashPassword = (password: string) => createHash('sha256').update(password).digest('hex')
 
@@ -65,9 +65,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
 
-    // create a simple session token and store mapping to user id
-    const token = randomBytes(24).toString('hex')
-    await redis.set(`${SESSION_PREFIX}${token}`, String(user.id))
+    // create a simple session token and store mapping to user id without scattering keys
+    const token = await createSession(user.id)
 
     return NextResponse.json({ ok: true, user: sanitizeUser(user), token })
   } catch (error) {

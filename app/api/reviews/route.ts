@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { getUserIdBySessionToken } from '@/lib/server/sessions'
 
 type ReviewRecord = {
   id: number
@@ -15,17 +16,13 @@ const redis = Redis.fromEnv()
 const REVIEWS_KEY = 'reviews'
 const USERS_KEY = 'users'
 const MATCHES_KEY = 'matches'
-const SESSION_PREFIX = 'session:'
 
 async function getSessionUserId(req: Request): Promise<number | null> {
   const header = req.headers.get('authorization')
   if (!header || !header.startsWith('Bearer ')) return null
   const token = header.slice('Bearer '.length)
   try {
-    const val = await redis.get<string>(`${SESSION_PREFIX}${token}`)
-    if (!val) return null
-    const id = Number(val)
-    return Number.isNaN(id) ? null : id
+    return await getUserIdBySessionToken(token)
   } catch (e) {
     console.error('Failed to read session token', e)
     return null
