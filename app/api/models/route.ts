@@ -6,6 +6,7 @@ type ModelProfile = {
   model_birthdate?: string
   model_gender?: string
   model_activity_area?: string
+  model_available_time?: string
   model_height?: string
   model_body_type?: string
   model_hair_style?: string

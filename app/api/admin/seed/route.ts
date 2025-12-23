@@ -84,6 +84,7 @@ export async function GET() {
           model_birthdate: '1998-04-10',
           model_gender: 'male',
           model_activity_area: '東京 渋谷',
+          model_available_time: '平日夜 / 土日午前',
           model_types: ['スチール', 'ショー'],
           model_height: '178',
           model_bust: '90',

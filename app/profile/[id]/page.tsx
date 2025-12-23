@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from 'react'
 
 const publicFields: { key: string; label: string }[] = [
   { key: 'model_activity_area', label: '活動地域' },
+  { key: 'model_available_time', label: '活動可能時間' },
   { key: 'model_types', label: 'モデルタイプ' },
   { key: 'model_height', label: '身長' },
   { key: 'model_body_type', label: '体形' },

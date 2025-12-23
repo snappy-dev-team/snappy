@@ -132,6 +132,7 @@ export default function ModelDetailPage() {
               <DetailRow label="体形">{profile?.model_body_type || '未入力'}</DetailRow>
               <DetailRow label="職業">{profile?.model_job_category || '未入力'}</DetailRow>
               <DetailRow label="活動地域">{profile?.model_activity_area || '未入力'}</DetailRow>
+              <DetailRow label="活動可能時間">{profile?.model_available_time || '未入力'}</DetailRow>
               <DetailRow label="性別">{genderLabel || '未入力'}</DetailRow>
               <DetailRow label="身長">{profile?.model_height ? `${profile.model_height}cm` : '未入力'}</DetailRow>
               <DetailRow label="避けたい条件">{profile?.model_ng_conditions || '未入力'}</DetailRow>

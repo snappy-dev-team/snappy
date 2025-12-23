@@ -34,6 +34,7 @@ export type ModelProfile = {
   model_birthdate: string
   model_gender: Gender | ''
   model_activity_area: string
+  model_available_time: string
   model_types: string[]
   model_height: string
   model_bust: string

@@ -51,6 +51,7 @@ const buildModelProfile = (body: IncomingPayload) => ({
   model_birthdate: body.model_signup_birthdate ?? '',
   model_gender: '',
   model_activity_area: '',
+  model_available_time: '',
   model_types: [],
   model_height: '',
   model_bust: '',

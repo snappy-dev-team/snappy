@@ -13,6 +13,7 @@ const emptyModelProfile: ModelProfile = {
   model_birthdate: '',
   model_gender: '',
   model_activity_area: '',
+  model_available_time: '',
   model_types: [],
   model_height: '',
   model_bust: '',
@@ -68,7 +69,9 @@ export default function ProfileEditPage() {
       return
     }
     setUser(session)
-    if (session.model_profile) setModelProfile(session.model_profile as ModelProfile)
+    if (session.model_profile) {
+      setModelProfile({ ...emptyModelProfile, ...(session.model_profile as ModelProfile) })
+    }
     if (session.client_profile) setClientProfile({ ...emptyClientProfile, ...(session.client_profile as ClientProfile) })
     if (session.email) setClientEmail(session.email)
   }, [router])
@@ -91,6 +94,7 @@ export default function ProfileEditPage() {
       setUser(updated)
       setSessionUser(updated)
       setMessage('プロフィールを保存しました。')
+      router.push('/mypage')
     } catch (err) {
       console.error(err)
       setError('保存に失敗しました。')
@@ -146,6 +150,12 @@ export default function ProfileEditPage() {
                 onChange={v => setModelProfile(prev => ({ ...prev, model_gender: v as ModelProfile['model_gender'] }))}
               />
               <Field label="活動地域 *" value={modelProfile.model_activity_area} onChange={v => setModelProfile(prev => ({ ...prev, model_activity_area: v }))} />
+              <Field
+                label="活動可能時間"
+                value={modelProfile.model_available_time}
+                onChange={v => setModelProfile(prev => ({ ...prev, model_available_time: v }))}
+                placeholder="例：平日18:00-22:00 / 土日午前"
+              />
               <Field
                 label="モデルタイプ（カンマ区切り）"
                 value={modelProfile.model_types.join(', ')}
