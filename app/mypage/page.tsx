@@ -51,11 +51,18 @@ const emptyClientProfile: ClientProfile = {
   client_company_or_personal_name: '',
   client_contact_name: '',
   client_contact_gender: '',
+  client_main_image: '',
+  client_sub_images: [],
+  client_shop_mood: '',
+  client_shop_features: '',
+  client_contact_image: '',
   client_address: '',
   client_phone: '',
   client_student_plan: false,
   client_student_id_image: '',
   student_account_status: 'pending',
+  contact_sns_type: '',
+  contact_sns_id: '',
 }
 
 const statCards = [
@@ -218,11 +225,12 @@ export default function MyPage() {
     reader.onload = async eventResult => {
       const base64 = eventResult.target?.result as string
       try {
+        const nextProfile = { ...modelProfile, model_main_image: base64 }
         const updated = await updateUserProfile(user.id, {
-          model_profile: { model_main_image: base64 },
+          model_profile: nextProfile,
         })
         setUser(updated)
-        setModelProfile(prev => ({ ...prev, model_main_image: base64 }))
+        setModelProfile(nextProfile)
         setSessionUser(updated)
       } catch (err) {
         console.error(err)
@@ -338,19 +346,22 @@ export default function MyPage() {
             <h2 className="text-xl font-semibold text-foreground">プロフィール編集・登録</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button className="w-full justify-between" onClick={() => router.push('/mypage/profile/edit')}>
+            <Button
+              className="w-full justify-between h-auto min-h-14 py-4 text-base rounded-xl"
+              onClick={() => router.push('/mypage/profile/edit')}
+            >
               プロフィール編集
               <span className="text-xs text-primary-foreground/90">詳細入力・画像登録</span>
             </Button>
             {isModel ? (
-              <Button variant="outline" className="w-full justify-between" onClick={() => router.push('/search?tab=models')}>
+              <Button variant="outline" className="w-full justify-between h-auto min-h-14 py-4 text-base rounded-xl" onClick={() => router.push('/search?tab=models')}>
                 モデル検索を見る
                 <span className="text-xs text-muted-foreground">公開プロフィール確認</span>
               </Button>
             ) : (
               <>
                 <Button
-                  className="w-full justify-between"
+                  className="w-full justify-between h-auto min-h-14 py-4 text-base rounded-xl"
                   onClick={() => router.push('/mypage/jobs/new?type=general')}
                 >
                   仕事募集（一般）

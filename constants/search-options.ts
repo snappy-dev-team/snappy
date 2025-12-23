@@ -4,7 +4,7 @@ export type SelectOption = {
 }
 
 export const AREA_OPTIONS: SelectOption[] = [
-  { label: 'エリアを選択', value: '' },
+  { label: '選択してください', value: '' },
   { label: '東京', value: 'tokyo' },
   { label: '渋谷', value: 'shibuya' },
   { label: '表参道', value: 'omotesando' },
@@ -14,7 +14,7 @@ export const AREA_OPTIONS: SelectOption[] = [
 ]
 
 export const AGE_RANGE_OPTIONS: SelectOption[] = [
-  { label: '年齢を選択', value: '' },
+  { label: '指定なし', value: '' },
   { label: '18-20歳', value: '18-20' },
   { label: '20-25歳', value: '20-25' },
   { label: '25-30歳', value: '25-30' },
@@ -23,22 +23,22 @@ export const AGE_RANGE_OPTIONS: SelectOption[] = [
 ]
 
 export const HAIR_STYLE_OPTIONS: SelectOption[] = [
-  { label: '髪質を選択', value: '' },
+  { label: '指定なし', value: '' },
   { label: 'ストレート', value: 'straight' },
   { label: 'ウェーブ', value: 'wave' },
-  { label: 'くせ毛', value: 'curly' },
+  { label: 'カール', value: 'curly' },
   { label: 'その他', value: 'other' },
 ]
 
 export const GENDER_OPTIONS: SelectOption[] = [
-  { label: '性別を選択', value: '' },
+  { label: '選択してください', value: '' },
   { label: '女性', value: 'female' },
   { label: '男性', value: 'male' },
   { label: 'その他', value: 'other' },
 ]
 
 export const DATE_RANGE_OPTIONS: SelectOption[] = [
-  { label: 'いつでも', value: '' },
+  { label: '指定なし', value: '' },
   { label: '今日', value: 'today' },
   { label: '今週', value: 'this-week' },
   { label: '今週末', value: 'this-weekend' },
@@ -48,8 +48,8 @@ export const DATE_RANGE_OPTIONS: SelectOption[] = [
 
 export const PRICE_RANGE_OPTIONS: SelectOption[] = [
   { label: '指定なし', value: '' },
-  { label: '¥5,000以内', value: '5000' },
-  { label: '¥10,000以内', value: '10000' },
-  { label: '¥20,000以内', value: '20000' },
-  { label: '¥50,000以内', value: '50000' },
+  { label: '〜5,000円', value: '5000' },
+  { label: '〜10,000円', value: '10000' },
+  { label: '〜20,000円', value: '20000' },
+  { label: '〜50,000円', value: '50000' },
 ]

@@ -2,12 +2,16 @@
 
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
+import { ImageUpload, MultiImageUpload } from '@/components/ui/ImageUpload'
+import { SelectInput } from '@/components/ui/SelectInput'
+import { TextInput } from '@/components/ui/TextInput'
+import { Textarea } from '@/components/ui/Textarea'
+import { AREA_OPTIONS, GENDER_OPTIONS, HAIR_STYLE_OPTIONS } from '@/constants/search-options'
 import { clearSessionUser, getSessionUser, setSessionUser } from '@/lib/auth'
 import { ClientProfile, ModelProfile, updateUserProfile, UserRecord } from '@/lib/users'
-import { LogOut, Save, Upload, X } from 'lucide-react'
+import { LogOut, Palette, Save, Share2, Sparkles, Wand2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
-import { AREA_OPTIONS, GENDER_OPTIONS, HAIR_STYLE_OPTIONS } from '@/constants/search-options'
+import { type ReactNode, useEffect, useState } from 'react'
 
 const emptyModelProfile: ModelProfile = {
   model_display_name: '',
@@ -70,14 +74,20 @@ export default function ProfileEditPage() {
       return
     }
     setUser(session)
-    if (session.model_profile) {
-      setModelProfile({ ...emptyModelProfile, ...(session.model_profile as ModelProfile) })
-    }
+    if (session.model_profile) setModelProfile({ ...emptyModelProfile, ...(session.model_profile as ModelProfile) })
     if (session.client_profile) setClientProfile({ ...emptyClientProfile, ...(session.client_profile as ClientProfile) })
     if (session.email) setClientEmail(session.email)
   }, [router])
 
   const isModel = user?.role === 'model'
+
+  const updateModelProfile = (updates: Partial<ModelProfile>) => {
+    setModelProfile(prev => ({ ...prev, ...updates }))
+  }
+
+  const updateClientProfile = (updates: Partial<ClientProfile>) => {
+    setClientProfile(prev => ({ ...prev, ...updates }))
+  }
 
   const handleSave = async () => {
     if (!user) return
@@ -86,19 +96,16 @@ export default function ProfileEditPage() {
     try {
       const updates = isModel
         ? { model_profile: modelProfile }
-        : (() => {
-            const { student_account_status: _ignoredStatus, ...clientProfilePayload } = clientProfile
-            return { client_profile: clientProfilePayload, email: clientEmail }
-          })()
+        : { client_profile: clientProfile, email: clientEmail }
 
       const updated = await updateUserProfile(user.id, updates)
       setUser(updated)
       setSessionUser(updated)
-      setMessage('プロフィールを保存しました。')
+      setMessage('プロフィールを保存しました')
       router.push('/mypage')
     } catch (err) {
       console.error(err)
-      setError('保存に失敗しました。')
+      setError('保存に失敗しました。時間をおいて再度お試しください')
     }
   }
 
@@ -110,213 +117,41 @@ export default function ProfileEditPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-white to-white">
       <Header />
-      <main className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">プロフィール編集</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              {isModel ? 'モデルプロフィール' : 'クライアントプロフィール'}
-            </h1>
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-10 space-y-8">
+        <div className="flex flex-col gap-4 rounded-3xl border border-primary/20 bg-white/90 p-6 shadow-lg shadow-primary/10 backdrop-blur">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="space-y-2">
+              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-primary">
+                <Sparkles className="size-4" />
+                Profile Studio
+              </p>
+              <h1 className="text-xl md:text-4xl font-bold text-foreground">
+                {isModel ? 'モデルプロフィール' : 'クライアントプロフィール'}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => router.push('/mypage')}>
+                マイページへ戻る
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.push('/mypage')}>
-              マイページへ戻る
-            </Button>
-            <Button variant="outline" size="sm" className="border-destructive text-destructive" onClick={handleLogout}>
-              <LogOut className="size-4" />
-              ログアウト
-            </Button>
-          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {message && <p className="text-sm text-primary">{message}</p>}
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {message && <p className="text-sm text-primary">{message}</p>}
-
         {isModel ? (
-          <section className="rounded-2xl border border-border bg-white shadow-sm p-6 md:p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="モデル名 *" value={modelProfile.model_display_name} onChange={v => setModelProfile(prev => ({ ...prev, model_display_name: v }))} />
-              <Field label="生年月日 *" type="date" value={modelProfile.model_birthdate} onChange={v => setModelProfile(prev => ({ ...prev, model_birthdate: v }))} />
-              <SelectField
-                label="性別 *"
-                value={modelProfile.model_gender}
-                options={GENDER_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_gender: v as ModelProfile['model_gender'] }))}
-              />
-              <SelectField
-                label="活動地域 *"
-                value={modelProfile.model_activity_area}
-                options={AREA_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_activity_area: v }))}
-              />
-              <Field
-                label="活動可能時間"
-                value={modelProfile.model_available_time}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_available_time: v }))}
-                placeholder="例：平日18:00-22:00 / 土日午前"
-              />
-              <Field
-                label="モデルタイプ（カンマ区切り）"
-                value={modelProfile.model_types.join(', ')}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_types: v.split(',').map(item => item.trim()).filter(Boolean) }))}
-                placeholder="スチール, CF, ショー"
-              />
-              <Field label="身長 *" value={modelProfile.model_height} onChange={v => setModelProfile(prev => ({ ...prev, model_height: v }))} />
-              <Field label="バスト" value={modelProfile.model_bust} onChange={v => setModelProfile(prev => ({ ...prev, model_bust: v }))} />
-              <Field label="ウエスト" value={modelProfile.model_waist} onChange={v => setModelProfile(prev => ({ ...prev, model_waist: v }))} />
-              <Field label="ヒップ" value={modelProfile.model_hip} onChange={v => setModelProfile(prev => ({ ...prev, model_hip: v }))} />
-              <Field label="靴サイズ" value={modelProfile.model_shoes_size} onChange={v => setModelProfile(prev => ({ ...prev, model_shoes_size: v }))} />
-              <Field label="体形 *" value={modelProfile.model_body_type} onChange={v => setModelProfile(prev => ({ ...prev, model_body_type: v }))} />
-              <SelectField
-                label="髪質 *"
-                value={modelProfile.model_hair_style}
-                options={HAIR_STYLE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_hair_style: v }))}
-              />
-              <ImageUploadField
-                label="メイン画像 *"
-                value={modelProfile.model_main_image}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_main_image: v }))}
-              />
-              <MultiImageUploadField
-                label="サブ画像（複数選択可）"
-                values={modelProfile.model_sub_images}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_sub_images: v }))}
-              />
-              <Field label="職業 *" value={modelProfile.model_job_category} onChange={v => setModelProfile(prev => ({ ...prev, model_job_category: v }))} placeholder="学生 / 会社員 など" />
-              <Field label="趣味 *" value={modelProfile.model_hobbies} onChange={v => setModelProfile(prev => ({ ...prev, model_hobbies: v }))} />
-              <TextareaField label="避けたい条件" value={modelProfile.model_ng_conditions} onChange={v => setModelProfile(prev => ({ ...prev, model_ng_conditions: v }))} />
-              <TextareaField label="自己紹介" value={modelProfile.model_self_intro} onChange={v => setModelProfile(prev => ({ ...prev, model_self_intro: v }))} />
-              <TextareaField label="実績" value={modelProfile.model_achievements} onChange={v => setModelProfile(prev => ({ ...prev, model_achievements: v }))} />
-              <SelectField
-                label="SNS種別（管理者のみ閲覧）"
-                value={modelProfile.contact_sns_type ?? ''}
-                options={[
-                  { value: '', label: '選択してください' },
-                  { value: 'instagram', label: 'Instagram' },
-                  { value: 'twitter', label: 'Twitter' },
-                  { value: 'other', label: 'その他' },
-                ]}
-                onChange={v => setModelProfile(prev => ({ ...prev, contact_sns_type: v as any }))}
-                helper="SNSは管理者のみ確認します。メールアドレスは必須、SNSは任意です。"
-              />
-              {modelProfile.contact_sns_type === 'other' && (
-                <Field
-                  label="SNSプラットフォーム名（その他を選択した場合）"
-                  value={modelProfile.contact_sns_id ? modelProfile.contact_sns_id.split(':')[0] || '' : ''}
-                  onChange={v => {
-                    const idPart = modelProfile.contact_sns_id?.split(':')[1] ?? ''
-                    setModelProfile(prev => ({ ...prev, contact_sns_id: `${v}:${idPart}`.replace(/^:/, '') }))
-                  }}
-                  placeholder="例: LINE, TikTok など"
-                />
-              )}
-              <Field
-                label="SNS ID（管理者のみ閲覧）"
-                value={modelProfile.contact_sns_id ?? ''}
-                onChange={v => setModelProfile(prev => ({ ...prev, contact_sns_id: v }))}
-                placeholder="@example や ID を入力"
-              />
-              <SelectField
-                label="公開設定 *"
-                value={modelProfile.model_profile_visibility}
-                options={[
-                  { value: 'public', label: '公開する' },
-                  { value: 'private', label: '公開しない' },
-                ]}
-                onChange={v => setModelProfile(prev => ({ ...prev, model_profile_visibility: v as ModelProfile['model_profile_visibility'] }))}
-                helper="「公開しない」を選ぶと検索・一覧から除外されます。"
-              />
-            </div>
-          </section>
+          <ModelForm profile={modelProfile} onChange={updateModelProfile} />
         ) : (
-          <section className="rounded-2xl border border-border bg-white shadow-sm p-6 md:p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="公開名 *" value={clientProfile.client_display_name} onChange={v => setClientProfile(prev => ({ ...prev, client_display_name: v }))} />
-              <Field label="会社名（個人名） *" value={clientProfile.client_company_or_personal_name} onChange={v => setClientProfile(prev => ({ ...prev, client_company_or_personal_name: v }))} />
-              <Field label="担当者名 *" value={clientProfile.client_contact_name} onChange={v => setClientProfile(prev => ({ ...prev, client_contact_name: v }))} />
-              <ImageUploadField
-                label="担当者写真"
-                value={clientProfile.client_contact_image}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_contact_image: v }))}
-              />
-              <ImageUploadField
-                label="店舗メイン画像"
-                value={clientProfile.client_main_image}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_main_image: v }))}
-              />
-              <MultiImageUploadField
-                label="店舗サブ画像（複数選択可）"
-                values={clientProfile.client_sub_images}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_sub_images: v }))}
-              />
-              <Field label="店舗の雰囲気" value={clientProfile.client_shop_mood} onChange={v => setClientProfile(prev => ({ ...prev, client_shop_mood: v }))} />
-              <TextareaField label="店舗の特徴・こだわり" value={clientProfile.client_shop_features} onChange={v => setClientProfile(prev => ({ ...prev, client_shop_features: v }))} />
-              <Field label="メールアドレス *" type="email" value={clientEmail} onChange={v => setClientEmail(v)} />
-              <SelectField
-                label="担当者の性別 *"
-                value={clientProfile.client_contact_gender}
-                options={GENDER_OPTIONS.filter(opt => opt.value !== '').map(opt => ({ value: opt.value, label: opt.label }))}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_contact_gender: v as ClientProfile['client_contact_gender'] }))}
-              />
-              <SelectField
-                label="所在エリア *"
-                value={clientProfile.client_address}
-                options={AREA_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))}
-              />
-              <Field label="電話番号" value={clientProfile.client_phone ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
-              <ImageUploadField
-                label="学生証画像"
-                value={clientProfile.client_student_id_image ?? ''}
-                onChange={v => setClientProfile(prev => ({ ...prev, client_student_id_image: v }))}
-              />
-              <SelectField
-                label="SNS種別（管理者のみ閲覧）"
-                value={clientProfile.contact_sns_type ?? ''}
-                options={[
-                  { value: '', label: '選択してください' },
-                  { value: 'instagram', label: 'Instagram' },
-                  { value: 'twitter', label: 'Twitter' },
-                  { value: 'other', label: 'その他' },
-                ]}
-                onChange={v => setClientProfile(prev => ({ ...prev, contact_sns_type: v as any }))}
-                helper="SNSは管理者のみ確認します。メールアドレスは必須、SNSは任意です。"
-              />
-              {clientProfile.contact_sns_type === 'other' && (
-                <Field
-                  label="SNSプラットフォーム名（その他を選択した場合）"
-                  value={clientProfile.contact_sns_id ? clientProfile.contact_sns_id.split(':')[0] || '' : ''}
-                  onChange={v => {
-                    const idPart = clientProfile.contact_sns_id?.split(':')[1] ?? ''
-                    setClientProfile(prev => ({ ...prev, contact_sns_id: `${v}:${idPart}`.replace(/^:/, '') }))
-                  }}
-                  placeholder="例: LINE, TikTok など"
-                />
-              )}
-              <Field
-                label="SNS ID（管理者のみ閲覧）"
-                value={clientProfile.contact_sns_id ?? ''}
-                onChange={v => setClientProfile(prev => ({ ...prev, contact_sns_id: v }))}
-                placeholder="@example や ID を入力"
-              />
-
-              {clientProfile.client_student_plan && (
-                <div className="space-y-2 text-sm md:col-span-2">
-                  <span className="font-medium text-foreground">学生アカウントステータス</span>
-                  <p className="px-4 py-2 rounded-lg border border-border bg-muted/20 text-foreground">
-                    {clientProfile.student_account_status ?? 'pending'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
+          <ClientForm profile={clientProfile} onChange={updateClientProfile} email={clientEmail} onEmailChange={setClientEmail} />
         )}
 
-        <div className="flex justify-end">
-          <Button onClick={handleSave} className="bg-primary text-primary-foreground">
+        <div className="sticky bottom-6 flex justify-end">
+          <Button
+            onClick={handleSave}
+            className="bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-primary/40"
+          >
             <Save className="size-4 mr-2" />
             保存する
           </Button>
@@ -326,279 +161,416 @@ export default function ProfileEditPage() {
   )
 }
 
-function Field({
-  label,
-  value,
+function ModelForm({
+  profile,
   onChange,
-  type = 'text',
-  placeholder,
 }: {
-  label: string
-  value: string
-  type?: string
-  placeholder?: string
-  onChange: (v: string) => void
+  profile: ModelProfile
+  onChange: (updates: Partial<ModelProfile>) => void
 }) {
-  return (
-    <label className="space-y-2 text-sm">
-      <span className="font-medium text-foreground">{label}</span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={e => onChange(e.target.value)}
-        className="w-full px-4 py-2 rounded-lg border border-border"
-      />
-    </label>
-  )
-}
+  const modelTypesValue = profile.model_types.join(', ')
 
-function TextareaField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
   return (
-    <label className="space-y-2 text-sm md:col-span-2">
-      <span className="font-medium text-foreground">{label}</span>
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        rows={3}
-        className="w-full px-4 py-2 rounded-lg border border-border"
-      />
-    </label>
-  )
-}
-
-function SelectField({
-  label,
-  value,
-  options,
-  onChange,
-  helper,
-}: {
-  label: string
-  value: string
-  options: { value: string; label: string }[]
-  helper?: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <label className="space-y-2 text-sm">
-      <span className="font-medium text-foreground">{label}</span>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full px-4 py-2 rounded-lg border border-border"
+    <div className="space-y-6">
+      <FormSection
+        title="基本情報"
+        icon={<Wand2 className="size-4" />}
       >
-        {options.map(option => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
-    </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextInput
+            label="モデル表示名"
+            required
+            value={profile.model_display_name}
+            placeholder="山田 花子"
+            onChange={value => onChange({ model_display_name: value })}
+          />
+          <TextInput
+            label="生年月日"
+            required
+            type="date"
+            value={profile.model_birthdate}
+            onChange={value => onChange({ model_birthdate: value })}
+          />
+          <SelectInput
+            label="性別"
+            required
+            value={profile.model_gender}
+            options={GENDER_OPTIONS}
+            onChange={value => onChange({ model_gender: value as ModelProfile['model_gender'] })}
+          />
+          <SelectInput
+            label="活動エリア"
+            required
+            value={profile.model_activity_area}
+            options={AREA_OPTIONS}
+            onChange={value => onChange({ model_activity_area: value })}
+          />
+          <TextInput
+            label="活動可能時間"
+            value={profile.model_available_time}
+            placeholder="例：平日18:00-22:00 / 土日午前"
+            onChange={value => onChange({ model_available_time: value })}
+          />
+          <TextInput
+            label="モデルタイプ"
+            value={modelTypesValue}
+            placeholder="例：スチール, CF, ショー"
+            helperText="カンマ区切りで入力してください"
+            onChange={value =>
+              onChange({
+                model_types: value
+                  .split(',')
+                  .map(item => item.trim())
+                  .filter(Boolean),
+              })
+            }
+          />
+          <TextInput
+            label="職業"
+            required
+            placeholder="学生 / 会社員 など"
+            value={profile.model_job_category}
+            onChange={value => onChange({ model_job_category: value })}
+          />
+          <TextInput
+            label="趣味"
+            required
+            value={profile.model_hobbies}
+            onChange={value => onChange({ model_hobbies: value })}
+          />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="スタイル・サイズ"
+        icon={<Palette className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <TextInput
+            label="身長"
+            required
+            placeholder="例：170cm"
+            value={profile.model_height}
+            onChange={value => onChange({ model_height: value })}
+          />
+          <TextInput
+            label="バスト"
+            required
+            placeholder="例：80cm"
+            value={profile.model_bust}
+            onChange={value => onChange({ model_bust: value })}
+          />
+          <TextInput
+            label="ウエスト"
+            required
+            placeholder="例：60cm"
+            value={profile.model_waist}
+            onChange={value => onChange({ model_waist: value })}
+          />
+          <TextInput
+            label="ヒップ"
+            required
+            placeholder="例：86cm"
+            value={profile.model_hip}
+            onChange={value => onChange({ model_hip: value })}
+          />
+          <TextInput
+            label="靴サイズ"
+            placeholder="例：24.5cm"
+            value={profile.model_shoes_size}
+            onChange={value => onChange({ model_shoes_size: value })}
+          />
+          <TextInput
+            label="体形"
+            required
+            placeholder="例：スレンダー"
+            value={profile.model_body_type}
+            onChange={value => onChange({ model_body_type: value })}
+          />
+          <SelectInput
+            label="髪質"
+            required
+            value={profile.model_hair_style}
+            options={HAIR_STYLE_OPTIONS}
+            onChange={value => onChange({ model_hair_style: value })}
+          />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="ビジュアル & 自己紹介"
+        icon={<Sparkles className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ImageUpload
+            label="メイン画像"
+            value={profile.model_main_image}
+            onChange={value => onChange({ model_main_image: value })}
+            helperText="5MB以内・正方形推奨"
+          />
+          <MultiImageUpload
+            label="サブ画像"
+            values={profile.model_sub_images}
+            onChange={values => onChange({ model_sub_images: values })}
+            helperText="複数枚アップロードできます"
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Textarea
+            label="自己紹介"
+            rows={4}
+            value={profile.model_self_intro}
+            onChange={value => onChange({ model_self_intro: value })}
+            helperText="あなたらしさが伝わる短い文章でOK"
+          />
+          <Textarea
+            label="実績"
+            rows={4}
+            value={profile.model_achievements}
+            onChange={value => onChange({ model_achievements: value })}
+            helperText="出演歴や撮影経験など"
+          />
+          <Textarea
+            label="避けたい条件"
+            rows={3}
+            value={profile.model_ng_conditions}
+            onChange={value => onChange({ model_ng_conditions: value })}
+          />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="連絡・公開設定"
+        icon={<Share2 className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SelectInput
+            label="SNS種別（任意）"
+            value={profile.contact_sns_type ?? ''}
+            options={[
+              { value: '', label: '選択してください' },
+              { value: 'instagram', label: 'Instagram' },
+              { value: 'twitter', label: 'Twitter' },
+              { value: 'other', label: 'その他' },
+            ]}
+            helperText="SNSは任意です"
+            onChange={value => onChange({ contact_sns_type: value as any })}
+          />
+          <TextInput
+            label="SNS ID / 連絡先（任意）"
+            placeholder="@example など。その他の場合は「TikTok @example」のように入力"
+            value={profile.contact_sns_id ?? ''}
+            onChange={value => onChange({ contact_sns_id: value })}
+          />
+          <SelectInput
+            label="公開設定"
+            required
+            value={profile.model_profile_visibility}
+            options={[
+              { value: 'public', label: '公開する' },
+              { value: 'private', label: '非公開にする' },
+            ]}
+            helperText="非公開にすると検索・一覧には表示されません"
+            onChange={value =>
+              onChange({ model_profile_visibility: value as ModelProfile['model_profile_visibility'] })
+            }
+          />
+        </div>
+      </FormSection>
+    </div>
   )
 }
 
-function ImageUploadField({
-  label,
-  value,
+function ClientForm({
+  profile,
+  email,
+  onEmailChange,
   onChange,
 }: {
-  label: string
-  value: string
-  onChange: (v: string) => void
+  profile: ClientProfile
+  email: string
+  onEmailChange: (email: string) => void
+  onChange: (updates: Partial<ClientProfile>) => void
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // ファイルサイズチェック（5MB制限）
-    if (file.size > 5 * 1024 * 1024) {
-      alert('ファイルサイズは5MB以下にしてください')
-      return
-    }
-
-    // 画像ファイルチェック
-    if (!file.type.startsWith('image/')) {
-      alert('画像ファイルを選択してください')
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string
-      onChange(base64)
-    }
-    reader.readAsDataURL(file)
+  const studentStatusLabel: Record<string, string> = {
+    pending: '審査中',
+    approved: '承認済み',
+    rejected: '否認',
   }
-
-  const handleRemove = () => {
-    onChange('')
-    if (inputRef.current) {
-      inputRef.current.value = ''
-    }
-  }
-
-  // base64かURLかを判定して画像を表示
-  const isValidImage = value && (value.startsWith('data:image') || value.startsWith('http'))
 
   return (
-    <div className="space-y-2 text-sm">
-      <span className="font-medium text-foreground">{label}</span>
-      <div className="space-y-3">
-        {isValidImage && (
-          <div className="relative inline-block">
-            <img
-              src={value}
-              alt="プレビュー"
-              className="w-32 h-32 object-cover rounded-lg border border-border"
-            />
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 hover:bg-destructive/90"
-            >
-              <X className="size-4" />
-            </button>
+    <div className="space-y-6">
+      <FormSection
+        title="基本情報"
+        icon={<Wand2 className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextInput
+            label="公開名"
+            required
+            value={profile.client_display_name}
+            placeholder="店舗やブランドの公開名"
+            onChange={value => onChange({ client_display_name: value })}
+          />
+          <TextInput
+            label="会社名（個人名）"
+            required
+            value={profile.client_company_or_personal_name}
+            onChange={value => onChange({ client_company_or_personal_name: value })}
+          />
+          <TextInput
+            label="担当者名"
+            required
+            value={profile.client_contact_name}
+            onChange={value => onChange({ client_contact_name: value })}
+          />
+          <SelectInput
+            label="担当者の性別"
+            required
+            value={profile.client_contact_gender}
+            options={GENDER_OPTIONS.filter(option => option.value !== '')}
+            onChange={value => onChange({ client_contact_gender: value as ClientProfile['client_contact_gender'] })}
+          />
+          <TextInput
+            label="メールアドレス"
+            required
+            type="email"
+            value={email}
+            onChange={onEmailChange}
+          />
+          <TextInput
+            label="電話番号（任意）"
+            type="tel"
+            value={profile.client_phone ?? ''}
+            onChange={value => onChange({ client_phone: value })}
+            placeholder="090-1234-5678"
+          />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="ビジュアル"
+        icon={<Palette className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ImageUpload
+            label="担当者画像"
+            value={profile.client_contact_image}
+            onChange={value => onChange({ client_contact_image: value })}
+            helperText="5MB以内"
+          />
+          <ImageUpload
+            label="メイン画像"
+            value={profile.client_main_image}
+            onChange={value => onChange({ client_main_image: value })}
+            helperText="5MB以内"
+          />
+          <MultiImageUpload
+            label="サブ画像"
+            values={profile.client_sub_images}
+            onChange={values => onChange({ client_sub_images: values })}
+            helperText="複数枚アップロードできます"
+          />
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="店舗・ブランド情報"
+        icon={<Sparkles className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextInput
+            label="お店の雰囲気"
+            value={profile.client_shop_mood}
+            onChange={value => onChange({ client_shop_mood: value })}
+            placeholder="例：ナチュラル / シック / ポップ"
+          />
+          <SelectInput
+            label="所在エリア"
+            required
+            value={profile.client_address}
+            options={AREA_OPTIONS}
+            onChange={value => onChange({ client_address: value })}
+          />
+          <Textarea
+            label="お店の特徴・こだわり"
+            rows={4}
+            value={profile.client_shop_features}
+            onChange={value => onChange({ client_shop_features: value })}
+          />
+        </div>
+        {profile.client_student_plan && (
+          <div className="rounded-xl border border-secondary/40 bg-secondary/10 p-4 text-sm flex items-center justify-between">
+            <div>
+              <p className="font-medium text-foreground">学生アカウント申請中</p>
+              <p className="text-muted-foreground text-xs">学生プランは審査後に有効になります</p>
+            </div>
+            <span className="rounded-full bg-white px-3 py-1 font-semibold text-secondary">
+              {studentStatusLabel[profile.student_account_status ?? 'pending'] ?? '審査中'}
+            </span>
           </div>
         )}
-        <div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-            id={`image-upload-${label}`}
+        {profile.client_student_plan && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ImageUpload
+              label="学生証画像"
+              value={profile.client_student_id_image ?? ''}
+              onChange={value => onChange({ client_student_id_image: value })}
+              helperText="学生プラン審査に使用します（5MB以内）"
+            />
+          </div>
+        )}
+      </FormSection>
+
+      <FormSection
+        title="SNS・連絡先"
+        icon={<Share2 className="size-4" />}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SelectInput
+            label="SNS種別（任意）"
+            value={profile.contact_sns_type ?? ''}
+            options={[
+              { value: '', label: '選択してください' },
+              { value: 'instagram', label: 'Instagram' },
+              { value: 'twitter', label: 'Twitter' },
+              { value: 'other', label: 'その他' },
+            ]}
+            helperText="メールアドレスは既に保存済みです。SNSは任意です。"
+            onChange={value => onChange({ contact_sns_type: value as any })}
           />
-          <label
-            htmlFor={`image-upload-${label}`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors"
-          >
-            <Upload className="size-4" />
-            画像を選択
-          </label>
+          <TextInput
+            label="SNS ID / 連絡先（任意）"
+            placeholder="@example など。その他の場合は「LINE @example」のように入力"
+            value={profile.contact_sns_id ?? ''}
+            onChange={value => onChange({ contact_sns_id: value })}
+          />
         </div>
-      </div>
+      </FormSection>
     </div>
   )
 }
 
-function MultiImageUploadField({
-  label,
-  values,
-  onChange,
+function FormSection({
+  title,
+  icon,
+  children,
 }: {
-  label: string
-  values: string[]
-  onChange: (v: string[]) => void
+  title: string
+  icon?: ReactNode
+  children: ReactNode
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
-
-    const fileArray = Array.from(files)
-    
-    // ファイルサイズチェック
-    for (const file of fileArray) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('各ファイルサイズは5MB以下にしてください')
-        return
-      }
-      if (!file.type.startsWith('image/')) {
-        alert('画像ファイルを選択してください')
-        return
-      }
-    }
-
-    // すべてのファイルをbase64に変換
-    const promises = fileArray.map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          resolve(event.target?.result as string)
-        }
-        reader.readAsDataURL(file)
-      })
-    })
-
-    Promise.all(promises).then(newImages => {
-      onChange([...values, ...newImages])
-    })
-
-    // inputをリセット
-    if (inputRef.current) {
-      inputRef.current.value = ''
-    }
-  }
-
-  const handleRemove = (index: number) => {
-    const newValues = values.filter((_, i) => i !== index)
-    onChange(newValues)
-  }
-
   return (
-    <div className="space-y-2 text-sm md:col-span-2">
-      <span className="font-medium text-foreground">{label}</span>
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-3">
-          {values.map((value, index) => {
-            const isValidImage = value && (value.startsWith('data:image') || value.startsWith('http'))
-            if (!isValidImage) return null
-            return (
-              <div key={index} className="relative inline-block">
-                <img
-                  src={value}
-                  alt={`サブ画像 ${index + 1}`}
-                  className="w-24 h-24 object-cover rounded-lg border border-border"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemove(index)}
-                  className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 hover:bg-destructive/90"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            )
-          })}
+    <section className="overflow-hidden rounded-3xl border border-border bg-white/95 shadow-lg shadow-primary/10">
+      <div className="flex items-center gap-3 bg-gradient-to-r from-primary to-primary/80 px-4 py-3 text-primary-foreground">
+        <div className="size-8 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
+          {icon}
         </div>
-        <div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-            className="hidden"
-            id={`multi-image-upload-${label}`}
-          />
-          <label
-            htmlFor={`multi-image-upload-${label}`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted cursor-pointer transition-colors"
-          >
-            <Upload className="size-4" />
-            画像を追加
-          </label>
-          {values.length > 0 && (
-            <span className="ml-3 text-xs text-muted-foreground">
-              {values.length}枚の画像が選択されています
-            </span>
-          )}
+        <div className="flex flex-col">
+          <h3 className="text-sm font-semibold leading-tight">{title}</h3>
         </div>
       </div>
-    </div>
+      <div className="p-6 md:p-8 space-y-4">{children}</div>
+    </section>
   )
 }
