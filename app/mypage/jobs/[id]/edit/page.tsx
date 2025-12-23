@@ -292,9 +292,8 @@ function JobEditContent() {
             ? studentForm.job_portfolio_images_student.split(',').map(item => item.trim()).filter(Boolean)
             : [],
         }
-        const updated = await updateJob(jobId, user.id, payload)
-        setJob(updated)
-        setMessage('学生アカウントの仕事募集を更新しました。')
+        await updateJob(jobId, user.id, payload)
+        router.push('/mypage')
       } else {
         const payload: JobGeneralPayload = {
           ...generalForm,
@@ -305,9 +304,8 @@ function JobEditContent() {
             ? generalForm.job_portfolio_images_general.split(',').map(item => item.trim()).filter(Boolean)
             : [],
         }
-        const updated = await updateJob(jobId, user.id, payload)
-        setJob(updated)
-        setMessage('一般アカウントの仕事募集を更新しました。')
+        await updateJob(jobId, user.id, payload)
+        router.push('/mypage')
       }
     } catch (err) {
       console.error(err)

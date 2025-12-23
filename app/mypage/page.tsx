@@ -373,7 +373,7 @@ export default function MyPage() {
           <section className="rounded-2xl border border-border bg-white shadow-sm">
             <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">募集中の仕事一覧</h2>
-              <span className="text-xs text-muted-foreground">{clientJobs.length} 件</span>
+              <span className="text-base font-semibold text-foreground">{clientJobs.length} 件</span>
             </div>
             {clientJobs.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">募集中の仕事はありません。</p>
@@ -382,13 +382,9 @@ export default function MyPage() {
                 {clientJobs.map(job => (
                   <div key={job.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div className="space-y-1 min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/mypage/jobs/${job.id}/edit`)}
-                        className="text-sm font-semibold text-foreground hover:underline text-left"
-                      >
+                      <p className="text-sm font-semibold text-foreground">
                         {jobTitle(job)}
-                      </button>
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {job.account_type === 'student' ? '学生アカウント' : '一般アカウント'} / {jobStatusLabel(job.job_status)}
                       </p>
@@ -406,7 +402,14 @@ export default function MyPage() {
                         variant={(job.job_status ?? 'active') === 'paused' ? 'default' : 'outline'}
                         onClick={() => handleUpdateJobStatus(job.id, 'paused')}
                       >
-                        募集一時停止
+                        一時停止
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => router.push(`/mypage/jobs/${job.id}/edit`)}
+                      >
+                        編集
                       </Button>
                       {deleteTargetId === job.id ? (
                         <>
@@ -418,7 +421,12 @@ export default function MyPage() {
                           </Button>
                         </>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => setDeleteTargetId(job.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                          onClick={() => setDeleteTargetId(job.id)}
+                        >
                           削除
                         </Button>
                       )}

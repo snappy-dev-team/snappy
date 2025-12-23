@@ -234,8 +234,7 @@ function JobNewContent() {
             : [],
         }
         await createJob(payload)
-        setStudentForm({ ...emptyStudentForm, client_id: user.id })
-        setMessage('学生アカウントの仕事募集を登録しました。')
+        router.push('/mypage')
       } else {
         const payload: JobGeneralPayload = {
           ...generalForm,
@@ -245,8 +244,7 @@ function JobNewContent() {
             : [],
         }
         await createJob(payload)
-        setGeneralForm({ ...emptyGeneralForm, client_id: user.id })
-        setMessage('一般アカウントの仕事募集を登録しました。')
+        router.push('/mypage')
       }
     } catch (err) {
       console.error(err)
