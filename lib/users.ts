@@ -348,3 +348,15 @@ export async function runSeed() {
   if (!res.ok) throw new Error('サンプルデータの投入に失敗しました')
   return res.json()
 }
+
+export async function deleteUser(userId: number): Promise<void> {
+  const res = await fetch('/api/users', {
+    method: 'DELETE',
+    headers: jsonHeaders,
+    body: JSON.stringify({ id: userId }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) {
+    throw new Error(data?.error ?? 'アカウントの削除に失敗しました')
+  }
+}

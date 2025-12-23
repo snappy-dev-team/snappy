@@ -207,3 +207,25 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const body = (await req.json()) as { id: number }
+    if (!body.id) {
+      return NextResponse.json({ ok: false, error: 'id is required' }, { status: 400 })
+    }
+
+    const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
+    const index = users.findIndex(u => u.id === body.id)
+    if (index === -1) {
+      return NextResponse.json({ ok: false, error: 'user not found' }, { status: 404 })
+    }
+
+    users.splice(index, 1)
+    await redis.set(USERS_KEY, users)
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('User deletion failed', error)
+    return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })
+  }
+}

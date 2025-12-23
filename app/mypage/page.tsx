@@ -12,13 +12,14 @@ import {
   StudentAccountStatus,
   UserRecord,
   deleteJob,
+  deleteUser,
   fetchMetrics,
   listJobs,
   listUsers,
   updateJob,
   updateUserProfile,
 } from '@/lib/users'
-import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, UserCog } from 'lucide-react'
+import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, Trash2, UserCog } from 'lucide-react'
 
 const emptyModelProfile: ModelProfile = {
   model_display_name: '',
@@ -78,6 +79,8 @@ export default function MyPage() {
   const [clientJobs, setClientJobs] = useState<any[]>([])
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const modelPhotoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -139,6 +142,22 @@ export default function MyPage() {
   const handleLogout = () => {
     clearSessionUser()
     router.replace('/login')
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    setError(null)
+    setDeletingAccount(true)
+    try {
+      await deleteUser(user.id)
+      clearSessionUser()
+      router.replace('/login')
+    } catch (err) {
+      console.error(err)
+      setError('アカウントの削除に失敗しました。')
+      setDeletingAccount(false)
+      setShowDeleteAccountConfirm(false)
+    }
   }
 
   const handleUpdateJobStatus = async (jobId: number, status: 'active' | 'paused') => {
@@ -410,6 +429,48 @@ export default function MyPage() {
             )}
           </section>
         )}
+
+        <section className="rounded-2xl border border-destructive/30 bg-destructive/5 shadow-sm p-6 md:p-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <Trash2 className="size-4 text-destructive" />
+            <h2 className="text-xl font-semibold text-destructive">アカウント削除</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            アカウントを削除すると、すべてのデータが完全に削除され、復元できません。
+          </p>
+          {showDeleteAccountConfirm ? (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-destructive">
+                本当にアカウントを削除しますか？この操作は取り消せません。
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="destructive"
+                  disabled={deletingAccount}
+                  onClick={handleDeleteAccount}
+                >
+                  {deletingAccount ? '削除中...' : 'アカウントを削除する'}
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={deletingAccount}
+                  onClick={() => setShowDeleteAccountConfirm(false)}
+                >
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/10"
+              onClick={() => setShowDeleteAccountConfirm(true)}
+            >
+              <Trash2 className="size-4" />
+              アカウントを削除
+            </Button>
+          )}
+        </section>
       </main>
     </div>
   )
