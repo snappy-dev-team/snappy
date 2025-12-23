@@ -222,7 +222,7 @@ export default function SearchPanel({
             onClick={() => handleSearch("jobs")}
             className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-6"
           >
-            この条件で探す
+            探す
           </Button>
         </div>
       </TabsContent>
@@ -265,7 +265,7 @@ export default function SearchPanel({
             onClick={() => handleSearch("models")}
             className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-6"
           >
-            モデルを探す
+            探す
           </Button>
         </div>
       </TabsContent>
