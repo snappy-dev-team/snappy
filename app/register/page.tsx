@@ -12,6 +12,7 @@ import {
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ChangeEvent, FormEvent, Suspense, useMemo, useState } from 'react'
+import { AREA_OPTIONS, GENDER_OPTIONS } from '@/constants/search-options'
 
 type Step = 'input' | 'confirm'
 
@@ -232,17 +233,19 @@ function RegisterForm() {
 
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          住所 <span className="text-secondary">*</span>
+          活動エリア <span className="text-secondary">*</span>
         </label>
-        <input
-          type="text"
+        <select
           name="model_signup_address"
           value={modelForm.model_signup_address}
           onChange={handleModelChange}
-          placeholder="東京都渋谷区..."
           className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
           required
-        />
+        >
+          {AREA_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -336,26 +339,28 @@ function RegisterForm() {
             onChange={handleClientChange}
             className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="male">男性</option>
-            <option value="female">女性</option>
-            <option value="other">その他</option>
+            {GENDER_OPTIONS.filter(opt => opt.value !== '').map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          所在地（本社 / 現住所） <span className="text-secondary">*</span>
+          所在エリア <span className="text-secondary">*</span>
         </label>
-        <input
-          type="text"
+        <select
           name="client_address"
           value={clientForm.client_address}
           onChange={handleClientChange}
-          placeholder="東京都渋谷区..."
           className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
           required
-        />
+        >
+          {AREA_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

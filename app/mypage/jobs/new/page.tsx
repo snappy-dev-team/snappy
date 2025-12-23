@@ -7,6 +7,7 @@ import { createJob, JobGeneralPayload, JobStudentPayload, StudentAccountStatus, 
 import { LogOut } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
+import { AREA_OPTIONS, GENDER_OPTIONS, AGE_RANGE_OPTIONS, HAIR_STYLE_OPTIONS, DATE_RANGE_OPTIONS } from '@/constants/search-options'
 
 type GeneralForm = Omit<JobGeneralPayload, 'id' | 'createdAt' | 'job_portfolio_images_general'> & {
   job_portfolio_images_general: string
@@ -369,6 +370,37 @@ function JobNewContent() {
           </div>
         )
       }
+      // プルダウン選択にするフィールド
+      const selectFieldOptions: Record<string, { value: string; label: string }[]> = {
+        job_model_gender: GENDER_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
+        job_model_age_range: AGE_RANGE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
+        job_model_hair_conditions: HAIR_STYLE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
+        job_salon_area_general: AREA_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
+        job_date_candidates: DATE_RANGE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label })),
+      }
+
+      if (selectFieldOptions[key]) {
+        return (
+          <label key={key} className="space-y-2 text-sm">
+            <span className="font-medium text-foreground">{labels[key] ?? key}</span>
+            <select
+              value={value as string}
+              onChange={e =>
+                isStudent
+                  ? setStudentForm(prev => ({ ...prev, [key]: e.target.value }))
+                  : setGeneralForm(prev => ({ ...prev, [key]: e.target.value }))
+              }
+              className="w-full px-3 py-2 rounded-lg border border-border"
+              disabled={(isStudent && !isStudentAccount) || (isStudent && studentStatus !== 'approved')}
+            >
+              {selectFieldOptions[key].map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+        )
+      }
+
       return (
         <label key={key} className="space-y-2 text-sm">
           <span className="font-medium text-foreground">{labels[key] ?? key}</span>

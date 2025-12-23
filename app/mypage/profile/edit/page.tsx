@@ -3,10 +3,11 @@
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { clearSessionUser, getSessionUser, setSessionUser } from '@/lib/auth'
-import { ClientProfile, ModelProfile, StudentAccountStatus, updateUserProfile, UserRecord } from '@/lib/users'
+import { ClientProfile, ModelProfile, updateUserProfile, UserRecord } from '@/lib/users'
 import { LogOut, Save, Upload, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
+import { AREA_OPTIONS, GENDER_OPTIONS, HAIR_STYLE_OPTIONS } from '@/constants/search-options'
 
 const emptyModelProfile: ModelProfile = {
   model_display_name: '',
@@ -141,15 +142,15 @@ export default function ProfileEditPage() {
               <SelectField
                 label="性別 *"
                 value={modelProfile.model_gender}
-                options={[
-                  { value: '', label: '選択してください' },
-                  { value: 'female', label: '女性' },
-                  { value: 'male', label: '男性' },
-                  { value: 'other', label: 'その他' },
-                ]}
+                options={GENDER_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
                 onChange={v => setModelProfile(prev => ({ ...prev, model_gender: v as ModelProfile['model_gender'] }))}
               />
-              <Field label="活動地域 *" value={modelProfile.model_activity_area} onChange={v => setModelProfile(prev => ({ ...prev, model_activity_area: v }))} />
+              <SelectField
+                label="活動地域 *"
+                value={modelProfile.model_activity_area}
+                options={AREA_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
+                onChange={v => setModelProfile(prev => ({ ...prev, model_activity_area: v }))}
+              />
               <Field
                 label="活動可能時間"
                 value={modelProfile.model_available_time}
@@ -169,15 +170,9 @@ export default function ProfileEditPage() {
               <Field label="靴サイズ" value={modelProfile.model_shoes_size} onChange={v => setModelProfile(prev => ({ ...prev, model_shoes_size: v }))} />
               <Field label="体形 *" value={modelProfile.model_body_type} onChange={v => setModelProfile(prev => ({ ...prev, model_body_type: v }))} />
               <SelectField
-                label="髪型 *"
+                label="髪質 *"
                 value={modelProfile.model_hair_style}
-                options={[
-                  { value: '', label: '選択してください' },
-                  ...['ショート', 'ミディアム', 'ロング', 'セミロング', 'ベリーショート', 'スーパーロング', 'ウルフ', 'アシンメトリー', 'サーファー', 'ボブ', 'モヒカン', 'ストレート', 'ドレッド', 'マッシュ', '坊主', 'スキンヘッド'].map(style => ({
-                    value: style,
-                    label: style,
-                  })),
-                ]}
+                options={HAIR_STYLE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
                 onChange={v => setModelProfile(prev => ({ ...prev, model_hair_style: v }))}
               />
               <ImageUploadField
@@ -263,14 +258,15 @@ export default function ProfileEditPage() {
               <SelectField
                 label="担当者の性別 *"
                 value={clientProfile.client_contact_gender}
-                options={[
-                  { value: 'male', label: '男性' },
-                  { value: 'female', label: '女性' },
-                  { value: 'other', label: 'その他' },
-                ]}
+                options={GENDER_OPTIONS.filter(opt => opt.value !== '').map(opt => ({ value: opt.value, label: opt.label }))}
                 onChange={v => setClientProfile(prev => ({ ...prev, client_contact_gender: v as ClientProfile['client_contact_gender'] }))}
               />
-              <Field label="住所 *" value={clientProfile.client_address} onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))} />
+              <SelectField
+                label="所在エリア *"
+                value={clientProfile.client_address}
+                options={AREA_OPTIONS.map(opt => ({ value: opt.value, label: opt.label }))}
+                onChange={v => setClientProfile(prev => ({ ...prev, client_address: v }))}
+              />
               <Field label="電話番号" value={clientProfile.client_phone ?? ''} onChange={v => setClientProfile(prev => ({ ...prev, client_phone: v }))} />
               <ImageUploadField
                 label="学生証画像"

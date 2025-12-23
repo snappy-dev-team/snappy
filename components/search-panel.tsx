@@ -5,40 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChevronDown, Plus, X } from 'lucide-react'
-
-const areaOptions = [
-  { label: 'エリアを選択', value: '' },
-  { label: '東京', value: 'tokyo' },
-  { label: '渋谷', value: 'shibuya' },
-  { label: '表参道', value: 'omotesando' },
-  { label: '新宿', value: 'shinjuku' },
-  { label: '大阪', value: 'osaka' },
-  { label: '名古屋', value: 'nagoya' },
-]
-
-const ageRangeOptions = [
-  { label: '年齢を選択', value: '' },
-  { label: '18-20歳', value: '18-20' },
-  { label: '20-25歳', value: '20-25' },
-  { label: '25-30歳', value: '25-30' },
-  { label: '30-35歳', value: '30-35' },
-  { label: '35歳以上', value: '35+' },
-]
-
-const hairStyleOptions = [
-  { label: '髪質を選択', value: '' },
-  { label: 'ストレート', value: 'straight' },
-  { label: 'ウェーブ', value: 'wave' },
-  { label: 'くせ毛', value: 'curly' },
-  { label: 'その他', value: 'other' },
-]
-
-const genderOptions = [
-  { label: '性別を選択', value: '' },
-  { label: '女性', value: 'female' },
-  { label: '男性', value: 'male' },
-  { label: 'その他', value: 'other' },
-]
+import {
+  AREA_OPTIONS,
+  AGE_RANGE_OPTIONS,
+  HAIR_STYLE_OPTIONS,
+  GENDER_OPTIONS,
+  DATE_RANGE_OPTIONS,
+  PRICE_RANGE_OPTIONS,
+} from '@/constants/search-options'
 
 type SearchPanelProps = {
   /** 検索結果ページで使用する場合はtrue（ナビゲーションなしで状態を同期） */
@@ -188,7 +162,7 @@ export default function SearchPanel({
                       onChange={e => setJobArea(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                      {areaOptions.map(opt => (
+                      {AREA_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
@@ -200,17 +174,14 @@ export default function SearchPanel({
                 <div className="flex flex-col gap-1">
                   <label className="text-xs md:text-sm font-semibold text-foreground">日時</label>
                   <div className="relative">
-                    <select 
+                    <select
                       value={jobDateRange}
                       onChange={e => setJobDateRange(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                      <option value="">いつでも</option>
-                      <option value="today">今日</option>
-                      <option value="this-week">今週</option>
-                      <option value="this-weekend">今週末</option>
-                      <option value="next-week">来週</option>
-                      <option value="this-month">今月</option>
+                      {DATE_RANGE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   </div>
@@ -282,11 +253,9 @@ export default function SearchPanel({
                         onChange={e => setMaxPrice(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                       >
-                        <option value="">指定なし</option>
-                        <option value="5000">¥5,000以内</option>
-                        <option value="10000">¥10,000以内</option>
-                        <option value="20000">¥20,000以内</option>
-                        <option value="50000">¥50,000以内</option>
+                        {PRICE_RANGE_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -318,7 +287,7 @@ export default function SearchPanel({
                       onChange={e => setModelAgeRange(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                      {ageRangeOptions.map(opt => (
+                      {AGE_RANGE_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
@@ -335,7 +304,7 @@ export default function SearchPanel({
                       onChange={e => setModelHairStyle(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                      {hairStyleOptions.map(opt => (
+                      {HAIR_STYLE_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
@@ -352,7 +321,7 @@ export default function SearchPanel({
                       onChange={e => setModelArea(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                      {areaOptions.map(opt => (
+                      {AREA_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
@@ -369,7 +338,7 @@ export default function SearchPanel({
                       onChange={e => setModelGender(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                      {genderOptions.map(opt => (
+                      {GENDER_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
