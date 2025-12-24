@@ -200,7 +200,10 @@ function SearchPageContent() {
         const matchesKeyword = kw ? haystack.includes(kw) : true
         
         // Area filter
-        const matchesArea = areaLabel ? (profile?.model_activity_area ?? '').includes(areaLabel) : true
+        const userArea = profile?.model_activity_area ?? ''
+        const matchesArea = filters.area
+          ? userArea === filters.area || (areaLabel ? userArea.includes(areaLabel) : userArea.includes(filters.area))
+          : true
         
         // Age filter
         const birthdate = profile?.model_birthdate || user.model_signup_birthdate || ''
@@ -209,11 +212,16 @@ function SearchPageContent() {
         
         // Hair style filter
         const userHairStyle = profile?.model_hair_style ?? ''
-        const matchesHair = hairLabel ? userHairStyle.includes(hairLabel) : true
+        const matchesHair = filters.hair
+          ? userHairStyle === filters.hair ||
+            (hairLabel ? userHairStyle.includes(hairLabel) : userHairStyle.includes(filters.hair))
+          : true
         
         // Gender filter
         const userGender = profile?.model_gender ?? ''
-        const matchesGender = genderLabel ? userGender === genderLabel || userGender === filters.gender : true
+        const matchesGender = filters.gender
+          ? userGender === filters.gender || (genderLabel ? userGender === genderLabel : false)
+          : true
         
         // Category filter (job_category)
         const jobCategory = profile?.model_job_category ?? ''

@@ -158,7 +158,6 @@ export default function SearchPanel({
             さらに絞り込み
           </button>
         </div>
-
         {showAdvancedFilters && (
           <div className="bg-neutral-soft p-4 rounded-lg space-y-4 border border-border">
             <div className="flex justify-between items-center mb-2">

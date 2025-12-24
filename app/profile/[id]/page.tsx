@@ -2,6 +2,7 @@
 
 import Header from '@/components/header'
 import { listUsers, UserRecord } from '@/lib/users'
+import { calculateAge } from '@/lib/search-utils'
 import { useParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 
@@ -52,6 +53,8 @@ function ProfilePageContent() {
   }
 
   const profile = user.model_profile as any
+  const birthdate = profile?.model_birthdate || user.model_signup_birthdate || ''
+  const calculatedAge = birthdate ? calculateAge(birthdate) : 0
   if (profile?.model_profile_visibility === 'private') {
     return (
       <div className="min-h-screen bg-white">
@@ -94,6 +97,12 @@ function ProfilePageContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {calculatedAge ? (
+            <div className="rounded-xl border border-border p-4 bg-white shadow-sm">
+              <p className="text-xs text-muted-foreground">年齢</p>
+              <p className="text-sm font-medium text-foreground mt-1">{calculatedAge}歳</p>
+            </div>
+          ) : null}
           {publicFields.map(field => {
             const value = field.key === 'model_types'
               ? (profile?.model_types ?? []).join(' / ')
