@@ -12,6 +12,12 @@ type ReviewRecord = {
   createdAt: string
 }
 
+type MatchRecord = {
+  model_user_id: number
+  client_user_id: number
+  status?: 'matched' | 'completed' | 'cancelled'
+}
+
 const redis = Redis.fromEnv()
 const REVIEWS_KEY = 'reviews'
 const USERS_KEY = 'users'
@@ -30,10 +36,14 @@ async function getSessionUserId(req: Request): Promise<number | null> {
 }
 
 async function updateMetricsForUser(userId: number) {
-  const matches = ((await redis.get<{ model_user_id: number; client_user_id: number }[]>(MATCHES_KEY)) ?? []) as any[]
+  const matches = ((await redis.get<MatchRecord[]>(MATCHES_KEY)) ?? []) as MatchRecord[]
   const reviews = ((await redis.get<ReviewRecord[]>(REVIEWS_KEY)) ?? []) as ReviewRecord[]
 
-  const matchCount = matches.filter(m => m.model_user_id === userId || m.client_user_id === userId).length
+  const matchCount = matches.filter(
+    match =>
+      (match.model_user_id === userId || match.client_user_id === userId) &&
+      match.status === 'completed',
+  ).length
   const userReviews = reviews.filter(r => r.target_user_id === userId)
   const reviewCount = userReviews.length
   const averageRating =

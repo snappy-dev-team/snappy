@@ -6,6 +6,7 @@ import { SelectInput } from '@/components/ui/SelectInput'
 import { TextInput } from '@/components/ui/TextInput'
 import { Textarea } from '@/components/ui/Textarea'
 import { AREA_OPTIONS, AGE_RANGE_OPTIONS, DATE_RANGE_OPTIONS, GENDER_OPTIONS, HAIR_STYLE_OPTIONS } from '@/constants/search-options'
+import { TIME_OPTIONS } from '@/constants/time-options'
 import { clearSessionUser, getSessionUser } from '@/lib/auth'
 import { createJob, JobGeneralPayload, JobStudentPayload, StudentAccountStatus, UserRecord } from '@/lib/users'
 import { Camera, CalendarClock, CircleDollarSign, LogOut, MapPin, Sparkles, UserCheck, Wand2 } from 'lucide-react'
@@ -18,6 +19,17 @@ type GeneralForm = Omit<JobGeneralPayload, 'id' | 'createdAt' | 'job_portfolio_i
 
 type StudentForm = Omit<JobStudentPayload, 'id' | 'createdAt' | 'job_portfolio_images_student'> & {
   job_portfolio_images_student: string
+}
+
+type TimeRangeValue = {
+  start: string
+  end: string
+}
+
+const parseTimeRangeValue = (value: string): TimeRangeValue => {
+  if (!value) return { start: '', end: '' }
+  const [start, end] = value.split('-').map(part => part.trim())
+  return { start: start ?? '', end: end ?? '' }
 }
 
 const emptyGeneralForm: GeneralForm = {
@@ -134,7 +146,7 @@ const labels: Record<string, string> = {
 }
 
 type FieldConfig = {
-  type?: 'text' | 'textarea' | 'select' | 'images'
+  type?: 'text' | 'textarea' | 'select' | 'images' | 'time-range'
   required?: boolean
   placeholder?: string
   helperText?: string
@@ -177,7 +189,7 @@ const fieldConfigs: Record<string, FieldConfig> = {
   job_reward_transport: { type: 'text', placeholder: '交通費の有無・上限' },
   job_reward_details: { type: 'textarea', rows: 2, placeholder: '報酬の補足や備考' },
   job_date_candidates: { type: 'select', options: DATE_RANGE_OPTIONS },
-  job_time_range: { type: 'select', options: DATE_RANGE_OPTIONS },
+  job_time_range: { type: 'time-range', helperText: '開始と終了の両方を選択してください' },
   job_shoot_location: { type: 'text', placeholder: '撮影・施術場所' },
   job_meeting_point: { type: 'text', placeholder: '集合場所や待ち合わせ詳細' },
   job_photo_usage_scope: { type: 'textarea', rows: 3, placeholder: '写真の掲載媒体・期間・範囲など' },
@@ -319,6 +331,12 @@ function JobNewContent() {
   const [studentStatus, setStudentStatus] = useState<StudentAccountStatus>('pending')
   const [generalForm, setGeneralForm] = useState<GeneralForm>(emptyGeneralForm)
   const [studentForm, setStudentForm] = useState<StudentForm>(emptyStudentForm)
+  const [generalTimeRange, setGeneralTimeRange] = useState<TimeRangeValue>(
+    parseTimeRangeValue(emptyGeneralForm.job_time_range),
+  )
+  const [studentTimeRange, setStudentTimeRange] = useState<TimeRangeValue>(
+    parseTimeRangeValue(emptyStudentForm.job_time_range),
+  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -441,6 +459,19 @@ function JobNewContent() {
     setGeneralForm(prev => ({ ...prev, [key]: value }))
   }
 
+  const updateTimeRangeValue = (next: TimeRangeValue) => {
+    if (formType === 'student') {
+      setStudentTimeRange(next)
+    } else {
+      setGeneralTimeRange(next)
+    }
+    if (next.start && next.end) {
+      updateField('job_time_range', `${next.start}-${next.end}`)
+    } else if (!next.start && !next.end) {
+      updateField('job_time_range', '')
+    }
+  }
+
   const renderImageField = (key: string) => {
     const value = formType === 'student' ? studentForm.job_portfolio_images_student : generalForm.job_portfolio_images_general
     const images = parseJobImages(value)
@@ -510,6 +541,37 @@ function JobNewContent() {
         ? (studentForm as Record<string, string | number | undefined>)[key]
         : (generalForm as Record<string, string | number | undefined>)[key]
     const value = typeof rawValue === 'string' ? rawValue : rawValue !== undefined ? String(rawValue) : ''
+    const isDisabled = formType === 'student' && studentLocked
+
+    if (config.type === 'time-range') {
+      const timeRange = formType === 'student' ? studentTimeRange : generalTimeRange
+      return (
+        <div key={key} className="space-y-2">
+          <span className="text-sm font-medium text-foreground">{labels[key] ?? key}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <SelectInput
+              label="開始時間"
+              value={timeRange.start}
+              options={TIME_OPTIONS}
+              onChange={next => updateTimeRangeValue({ ...timeRange, start: next })}
+              required={config.required}
+              disabled={isDisabled}
+              className="text-xs md:text-sm"
+            />
+            <SelectInput
+              label="終了時間"
+              value={timeRange.end}
+              options={TIME_OPTIONS}
+              onChange={next => updateTimeRangeValue({ ...timeRange, end: next })}
+              required={config.required}
+              disabled={isDisabled}
+              className="text-xs md:text-sm"
+            />
+          </div>
+          {config.helperText && <p className="text-xs text-muted-foreground">{config.helperText}</p>}
+        </div>
+      )
+    }
 
     if (config.type === 'select' && config.options) {
       return (
@@ -522,7 +584,7 @@ function JobNewContent() {
           required={config.required}
           placeholder={config.placeholder}
           helperText={config.helperText}
-          disabled={formType === 'student' && studentLocked}
+          disabled={isDisabled}
         />
       )
     }
@@ -537,7 +599,7 @@ function JobNewContent() {
           required={config.required}
           placeholder={config.placeholder}
           helperText={config.helperText}
-          disabled={formType === 'student' && studentLocked}
+          disabled={isDisabled}
         />
       )
     }
@@ -552,7 +614,7 @@ function JobNewContent() {
         required={config.required}
         placeholder={config.placeholder}
         helperText={config.helperText}
-        disabled={formType === 'student' && studentLocked}
+        disabled={isDisabled}
       />
     )
   }

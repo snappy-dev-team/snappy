@@ -40,7 +40,9 @@ export async function GET(req: Request) {
   const reviews = ((await redis.get<ReviewRecord[]>(REVIEWS_KEY)) ?? []) as ReviewRecord[]
 
   const matchCount = matches.filter(
-    match => match.model_user_id === userId || match.client_user_id === userId,
+    match =>
+      (match.model_user_id === userId || match.client_user_id === userId) &&
+      match.status === 'completed',
   ).length
   const userReviews = reviews.filter(review => review.target_user_id === userId)
   const reviewCount = userReviews.length

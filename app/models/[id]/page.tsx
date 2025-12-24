@@ -9,6 +9,7 @@ import { UserRecord } from '@/lib/users'
 import { listReviews, listUsers } from '@/lib/users'
 import ReviewForm from '@/components/review-form'
 import ReviewList from '@/components/review-list'
+import { calculateAge } from '@/lib/search-utils'
 
 export default function ModelDetailPage() {
   const params = useParams<{ id: string }>()
@@ -51,6 +52,8 @@ export default function ModelDetailPage() {
   }, [modelId])
 
   const profile = modelUser?.model_profile as any
+  const birthdate = profile?.model_birthdate || modelUser?.model_signup_birthdate || ''
+  const calculatedAge = birthdate ? calculateAge(birthdate) : 0
   const displayName = profile?.model_display_name || modelUser?.model_signup_name || modelUser?.name || '名称未設定'
   const mainImage = profile?.model_main_image || 'https://placehold.co/800x500?text=Model'
   const subImages = Array.isArray(profile?.model_sub_images) ? profile.model_sub_images.filter(Boolean).slice(0, 4) : []
@@ -99,6 +102,7 @@ export default function ModelDetailPage() {
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">モデルの詳細</p>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">{displayName}</h1>
+            {calculatedAge ? <p className="text-sm text-muted-foreground">{calculatedAge}歳</p> : null}
           </div>
           <Button variant="outline" onClick={() => router.back()}>
             戻る
