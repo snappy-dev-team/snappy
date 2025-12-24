@@ -1,55 +1,25 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ChevronDown, Plus, X } from 'lucide-react'
-
-const areaOptions = [
-  { label: 'エリアを選択', value: '' },
-  { label: '東京', value: 'tokyo' },
-  { label: '渋谷', value: 'shibuya' },
-  { label: '表参道', value: 'omotesando' },
-  { label: '新宿', value: 'shinjuku' },
-  { label: '大阪', value: 'osaka' },
-  { label: '名古屋', value: 'nagoya' },
-]
-
-const ageRangeOptions = [
-  { label: '年齢を選択', value: '' },
-  { label: '18-20歳', value: '18-20' },
-  { label: '20-25歳', value: '20-25' },
-  { label: '25-30歳', value: '25-30' },
-  { label: '30-35歳', value: '30-35' },
-  { label: '35歳以上', value: '35+' },
-]
-
-const hairStyleOptions = [
-  { label: '髪質を選択', value: '' },
-  { label: 'ストレート', value: 'straight' },
-  { label: 'ウェーブ', value: 'wave' },
-  { label: 'くせ毛', value: 'curly' },
-  { label: 'その他', value: 'other' },
-]
-
-const genderOptions = [
-  { label: '性別を選択', value: '' },
-  { label: '女性', value: 'female' },
-  { label: '男性', value: 'male' },
-  { label: 'その他', value: 'other' },
-]
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Plus, X } from "lucide-react"
+import { SelectInput } from "@/components/ui/SelectInput"
+import {
+  AREA_OPTIONS,
+  AGE_RANGE_OPTIONS,
+  HAIR_STYLE_OPTIONS,
+  GENDER_OPTIONS,
+  DATE_RANGE_OPTIONS,
+  PRICE_RANGE_OPTIONS,
+} from "@/constants/search-options"
 
 type SearchPanelProps = {
-  /** 検索結果ページで使用する場合はtrue（ナビゲーションなしで状態を同期） */
   embedded?: boolean
-  /** 初期タブ */
-  initialTab?: 'models' | 'jobs'
-  /** タブが変更された時のコールバック */
-  onTabChange?: (tab: 'models' | 'jobs') => void
-  /** 検索が実行された時のコールバック（embeddedモード用） */
+  initialTab?: "models" | "jobs"
+  onTabChange?: (tab: "models" | "jobs") => void
   onSearch?: (params: URLSearchParams) => void
-  /** 外側のコンテナスタイルを無効化 */
   noContainer?: boolean
 }
 
@@ -62,94 +32,82 @@ export default function SearchPanel({
 }: SearchPanelProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
-  // URLパラメータから初期値を取得（embeddedモード用）
-  const getInitialTab = (): 'models' | 'jobs' => {
+
+  const getInitialTab = (): "models" | "jobs" => {
     if (initialTab) return initialTab
     if (embedded) {
-      const tabParam = searchParams.get('tab')
-      return tabParam === 'models' ? 'models' : 'jobs'
+      const tabParam = searchParams.get("tab")
+      return tabParam === "models" ? "models" : "jobs"
     }
-    return 'jobs'
+    return "jobs"
   }
 
-  const [activeTab, setActiveTab] = useState<'models' | 'jobs'>(getInitialTab())
+  const [activeTab, setActiveTab] = useState<"models" | "jobs">(getInitialTab())
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
-  // Job search filters
-  const [jobArea, setJobArea] = useState(embedded ? searchParams.get('area') ?? '' : '')
-  // カテゴリーフィルターは廃止
-  const [jobDateRange, setJobDateRange] = useState(embedded ? searchParams.get('date') ?? '' : '')
+  const [jobArea, setJobArea] = useState(embedded ? searchParams.get("area") ?? "" : "")
+  const [jobDateRange, setJobDateRange] = useState(embedded ? searchParams.get("date") ?? "" : "")
 
-  // Model search filters
-  const [modelArea, setModelArea] = useState(embedded ? searchParams.get('area') ?? '' : '')
-  const [modelAgeRange, setModelAgeRange] = useState(embedded ? searchParams.get('age') ?? '' : '')
-  const [modelHairStyle, setModelHairStyle] = useState(embedded ? searchParams.get('hair') ?? '' : '')
-  const [modelGender, setModelGender] = useState(embedded ? searchParams.get('gender') ?? '' : '')
-  // カテゴリーフィルターは廃止
+  const [modelArea, setModelArea] = useState(embedded ? searchParams.get("area") ?? "" : "")
+  const [modelAgeRange, setModelAgeRange] = useState(embedded ? searchParams.get("age") ?? "" : "")
+  const [modelHairStyle, setModelHairStyle] = useState(embedded ? searchParams.get("hair") ?? "" : "")
+  const [modelGender, setModelGender] = useState(embedded ? searchParams.get("gender") ?? "" : "")
 
-  // Advanced filters (shared)
   const [femaleStaff, setFemaleStaff] = useState(false)
   const [maleStaff, setMaleStaff] = useState(false)
-  const [creditCardOk, setCreditCardOk] = useState(embedded ? searchParams.get('card') === '1' : false)
-  const [maxPrice, setMaxPrice] = useState(embedded ? searchParams.get('price') ?? '' : '')
+  const [creditCardOk, setCreditCardOk] = useState(embedded ? searchParams.get("card") === "1" : false)
+  const [maxPrice, setMaxPrice] = useState(embedded ? searchParams.get("price") ?? "" : "")
 
-  // embeddedモードでURLパラメータが変更されたら状態を同期
   useEffect(() => {
-    if (embedded) {
-      const tabParam = searchParams.get('tab')
-      if (tabParam === 'models' || tabParam === 'clients') {
-        setActiveTab(tabParam === 'models' ? 'models' : 'jobs')
-      }
-      setJobArea(searchParams.get('area') ?? '')
-      setModelArea(searchParams.get('area') ?? '')
-      setModelAgeRange(searchParams.get('age') ?? '')
-      setModelHairStyle(searchParams.get('hair') ?? '')
-      setModelGender(searchParams.get('gender') ?? '')
-      // カテゴリーフィルターは廃止
-  }
-}, [embedded, searchParams])
+    if (!embedded) return
+    const tabParam = searchParams.get("tab")
+    if (tabParam === "models" || tabParam === "clients") {
+      setActiveTab(tabParam === "models" ? "models" : "jobs")
+    }
+    setJobArea(searchParams.get("area") ?? "")
+    setModelArea(searchParams.get("area") ?? "")
+    setModelAgeRange(searchParams.get("age") ?? "")
+    setModelHairStyle(searchParams.get("hair") ?? "")
+    setModelGender(searchParams.get("gender") ?? "")
+  }, [embedded, searchParams])
 
   const buildJobQuery = () => {
     const params = new URLSearchParams()
-    params.set('tab', 'clients')
-    if (jobArea) params.set('area', jobArea)
-    // カテゴリーフィルターは廃止
-    if (jobDateRange) params.set('date', jobDateRange)
+    params.set("tab", "clients")
+    if (jobArea) params.set("area", jobArea)
+    if (jobDateRange) params.set("date", jobDateRange)
     if (femaleStaff || maleStaff) {
-      params.set('staffGender', femaleStaff && maleStaff ? 'both' : femaleStaff ? 'female' : 'male')
+      params.set("staffGender", femaleStaff && maleStaff ? "both" : femaleStaff ? "female" : "male")
     }
-    if (creditCardOk) params.set('card', '1')
-    if (maxPrice) params.set('price', maxPrice)
+    if (creditCardOk) params.set("card", "1")
+    if (maxPrice) params.set("price", maxPrice)
     return params
   }
 
   const buildModelQuery = () => {
     const params = new URLSearchParams()
-    params.set('tab', 'models')
-    if (modelArea) params.set('area', modelArea)
-    if (modelAgeRange) params.set('age', modelAgeRange)
-    if (modelHairStyle) params.set('hair', modelHairStyle)
-    if (modelGender) params.set('gender', modelGender)
-    // カテゴリーフィルターは廃止
+    params.set("tab", "models")
+    if (modelArea) params.set("area", modelArea)
+    if (modelAgeRange) params.set("age", modelAgeRange)
+    if (modelHairStyle) params.set("hair", modelHairStyle)
+    if (modelGender) params.set("gender", modelGender)
     return params
   }
 
-  const handleTabChange = (tab: 'models' | 'jobs') => {
+  const handleTabChange = (tab: "models" | "jobs") => {
     setActiveTab(tab)
     onTabChange?.(tab)
-    
+
     if (embedded) {
-      // embeddedモードではタブ切り替え時にURLを更新
-      const params = tab === 'models' ? buildModelQuery() : buildJobQuery()
+      const params = tab === "models" ? buildModelQuery() : buildJobQuery()
       router.replace(`/search?${params.toString()}`)
       onSearch?.(params)
     }
   }
 
-  const handleSearch = (tab: 'models' | 'jobs') => {
-    const params = tab === 'models' ? buildModelQuery() : buildJobQuery()
-    
+  const handleSearch = (tab: "models" | "jobs") => {
+    const params = tab === "models" ? buildModelQuery() : buildJobQuery()
+
     if (embedded) {
       router.replace(`/search?${params.toString()}`)
       onSearch?.(params)
@@ -159,236 +117,159 @@ export default function SearchPanel({
   }
 
   const tabsContent = (
-    <Tabs value={activeTab} onValueChange={value => handleTabChange(value as 'models' | 'jobs')} className="w-full">
+    <Tabs value={activeTab} onValueChange={value => handleTabChange(value as "models" | "jobs")} className="w-full">
       <TabsList className="grid w-full grid-cols-2 bg-transparent gap-2 p-0 h-auto mb-4 md:mb-5">
         <TabsTrigger
           value="jobs"
           className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-medium text-sm md:text-base transition-all"
         >
-          お仕事をお探しの方
+          仕事を探す
         </TabsTrigger>
         <TabsTrigger
           value="models"
           className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-neutral-soft data-[state=inactive]:text-muted-foreground rounded-full py-2 px-4 font-medium text-sm md:text-base transition-all"
         >
-          モデルをお探しの方
+          モデルを探す
         </TabsTrigger>
       </TabsList>
 
-            {/* Jobs tab */}
-            <TabsContent value="jobs" className="space-y-4 mt-4">
-              {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_auto] gap-3 items-end mt-4">
-                {/* Area Select */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs md:text-sm font-semibold text-foreground">エリア</label>
-                  <div className="relative">
-                    <select 
-                      value={jobArea}
-                      onChange={e => setJobArea(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    >
-                      {areaOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
+      {/* Jobs tab */}
+      <TabsContent value="jobs" className="space-y-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_auto] gap-3 items-end mt-4">
+          <SelectInput
+            label="エリア"
+            value={jobArea}
+            options={AREA_OPTIONS}
+            onChange={setJobArea}
+            className="text-xs md:text-sm"
+          />
+          <SelectInput
+            label="日付"
+            value={jobDateRange}
+            options={DATE_RANGE_OPTIONS}
+            onChange={setJobDateRange}
+            className="text-xs md:text-sm"
+          />
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="text-primary hover:text-secondary text-sm md:text-base font-medium flex items-center gap-1 hover:gap-1.5 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            さらに絞り込み
+          </button>
+        </div>
 
-                {/* DateTime Select */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs md:text-sm font-semibold text-foreground">日時</label>
-                  <div className="relative">
-                    <select 
-                      value={jobDateRange}
-                      onChange={e => setJobDateRange(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    >
-                      <option value="">いつでも</option>
-                      <option value="today">今日</option>
-                      <option value="this-week">今週</option>
-                      <option value="this-weekend">今週末</option>
-                      <option value="next-week">来週</option>
-                      <option value="this-month">今月</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
+        {showAdvancedFilters && (
+          <div className="bg-neutral-soft p-4 rounded-lg space-y-4 border border-border">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-foreground">さらに絞り込み</h3>
+              <button onClick={() => setShowAdvancedFilters(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-                {/* Advanced Filter Button */}
-                <button
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className="text-primary hover:text-secondary text-sm md:text-base font-medium flex items-center gap-1 hover:gap-1.5 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  こだわり条件
-                </button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">スタッフの性別</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={femaleStaff}
+                    onChange={e => setFemaleStaff(e.target.checked)}
+                    className="w-4 h-4 rounded border-border"
+                  />
+                  <span className="text-sm text-foreground">女性スタッフ</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={maleStaff}
+                    onChange={e => setMaleStaff(e.target.checked)}
+                    className="w-4 h-4 rounded border-border"
+                  />
+                  <span className="text-sm text-foreground">男性スタッフ</span>
+                </label>
               </div>
+            </div>
 
-              {showAdvancedFilters && (
-                <div className="bg-neutral-soft p-4 rounded-lg space-y-4 border border-border">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold text-foreground">こだわり条件</h3>
-                    <button onClick={() => setShowAdvancedFilters(false)} className="text-muted-foreground hover:text-foreground">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={creditCardOk}
+                  onChange={e => setCreditCardOk(e.target.checked)}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <span className="text-sm font-medium text-foreground">クレジットカードOK</span>
+              </label>
+            </div>
 
-                  {/* Staff Gender */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground block">スタッフの性別</label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={femaleStaff}
-                          onChange={e => setFemaleStaff(e.target.checked)}
-                          className="w-4 h-4 rounded border-border"
-                        />
-                        <span className="text-sm text-foreground">女性スタッフ</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={maleStaff}
-                          onChange={e => setMaleStaff(e.target.checked)}
-                          className="w-4 h-4 rounded border-border"
-                        />
-                        <span className="text-sm text-foreground">男性スタッフ</span>
-                      </label>
-                    </div>
-                  </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground block">予算上限</label>
+              <SelectInput
+                label=""
+                value={maxPrice}
+                options={PRICE_RANGE_OPTIONS}
+                onChange={setMaxPrice}
+                className="text-sm"
+              />
+            </div>
+          </div>
+        )}
 
-                  {/* Credit Card */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={creditCardOk}
-                        onChange={e => setCreditCardOk(e.target.checked)}
-                        className="w-4 h-4 rounded border-border"
-                      />
-                      <span className="text-sm font-medium text-foreground">クレジットカード決済OK</span>
-                    </label>
-                  </div>
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={() => handleSearch("jobs")}
+            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-6"
+          >
+            探す
+          </Button>
+        </div>
+      </TabsContent>
 
-                  {/* Price Range */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground block">料金上限</label>
-                    <div className="relative">
-                      <select
-                        value={maxPrice}
-                        onChange={e => setMaxPrice(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                      >
-                        <option value="">指定なし</option>
-                        <option value="5000">¥5,000以内</option>
-                        <option value="10000">¥10,000以内</option>
-                        <option value="20000">¥20,000以内</option>
-                        <option value="50000">¥50,000以内</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-              )}
+      {/* Models tab */}
+      <TabsContent value="models" className="space-y-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end mt-4">
+          <SelectInput
+            label="年齢"
+            value={modelAgeRange}
+            options={AGE_RANGE_OPTIONS}
+            onChange={setModelAgeRange}
+            className="text-xs md:text-sm"
+          />
+          <SelectInput
+            label="髪質"
+            value={modelHairStyle}
+            options={HAIR_STYLE_OPTIONS}
+            onChange={setModelHairStyle}
+            className="text-xs md:text-sm"
+          />
+          <SelectInput
+            label="エリア"
+            value={modelArea}
+            options={AREA_OPTIONS}
+            onChange={setModelArea}
+            className="text-xs md:text-sm"
+          />
+          <SelectInput
+            label="性別"
+            value={modelGender}
+            options={GENDER_OPTIONS}
+            onChange={setModelGender}
+            className="text-xs md:text-sm"
+          />
+        </div>
 
-              {/* Submit Button */}
-              <div className="flex justify-end pt-2">
-                <Button 
-                  onClick={() => handleSearch('jobs')}
-                  className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-6"
-                >
-                  この条件で検索
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* Salon Search Tab - モデルをお探しの方 */}
-            <TabsContent value="models" className="space-y-4 mt-4">
-              {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end mt-4">
-                {/* Age Range */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs md:text-sm font-semibold text-foreground">年齢</label>
-                  <div className="relative">
-                    <select 
-                      value={modelAgeRange}
-                      onChange={e => setModelAgeRange(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    >
-                      {ageRangeOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Hair Type */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs md:text-sm font-semibold text-foreground">髪質</label>
-                  <div className="relative">
-                    <select 
-                      value={modelHairStyle}
-                      onChange={e => setModelHairStyle(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    >
-                      {hairStyleOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs md:text-sm font-semibold text-foreground">地域</label>
-                  <div className="relative">
-                    <select 
-                      value={modelArea}
-                      onChange={e => setModelArea(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    >
-                      {areaOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Gender Filter */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs md:text-sm font-semibold text-foreground">性別</label>
-                  <div className="relative">
-                    <select 
-                      value={modelGender}
-                      onChange={e => setModelGender(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-border bg-white text-foreground text-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    >
-                      {genderOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end pt-2">
-                <Button 
-                  onClick={() => handleSearch('models')}
-                  className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-6"
-                >
-                  モデルを検索
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={() => handleSearch("models")}
+            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-6"
+          >
+            探す
+          </Button>
+        </div>
+      </TabsContent>
+    </Tabs>
   )
 
   if (noContainer) {

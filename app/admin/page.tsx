@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { listApplications, updateApplicationStatus, type ApplicationRecord, type ApplicationStatus } from '@/lib/applications'
-import { listJobs, listUsers, runSeed, updateStudentStatus, type StudentAccountStatus, type UserRecord } from '@/lib/users'
+import { listJobs, listUsers, runSeed, updateStudentStatus, type StudentAccountStatus, type UserRecord, type JobGeneralPayload, type JobStudentPayload } from '@/lib/users'
 
 const studentStatusLabel: Record<StudentAccountStatus, string> = {
   pending: '承認待ち',
@@ -128,6 +129,16 @@ export default function AdminPage() {
     [applications],
   )
 
+  const allClients = useMemo(
+    () => users.filter(user => user.role === 'client'),
+    [users],
+  )
+
+  const allModels = useMemo(
+    () => users.filter(user => user.role === 'model'),
+    [users],
+  )
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -135,7 +146,7 @@ export default function AdminPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">管理用マイページ</p>
-            <h1 className="text-2xl font-bold text-foreground">学生アカウント管理と応募一覧</h1>
+            <h1 className="text-2xl font-bold text-foreground">管理ダッシュボード</h1>
           </div>
           <Button variant="outline" onClick={handleSeed}>
             サンプルデータ投入
@@ -146,48 +157,71 @@ export default function AdminPage() {
         {error && <p className="text-sm text-destructive">{error}</p>}
         {message && <p className="text-sm text-primary">{message}</p>}
 
-        <section className="rounded-2xl border border-border bg-white shadow-sm">
-          <div className="p-4 md:p-5 border-b border-border">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">承認待ちの学生アカウント</h2>
-              <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">{pendingStudents.length} 件</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">学生アカウントの有効化/無効化はここだけで行えます。</p>
-          </div>
+        <Tabs defaultValue="students" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="students">学生管理</TabsTrigger>
+            <TabsTrigger value="jobs">全募集 ({jobs.length})</TabsTrigger>
+            <TabsTrigger value="clients">全クライアント ({allClients.length})</TabsTrigger>
+            <TabsTrigger value="models">全モデル ({allModels.length})</TabsTrigger>
+          </TabsList>
 
-          {pendingStudents.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">承認待ちはありません。</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {pendingStudents.map(user => (
-                <StudentRow key={user.id} user={user} onUpdate={handleUpdateStudentStatus} />
-              ))}
-            </div>
-          )}
-        </section>
+          <TabsContent value="students" className="space-y-6">
+            <section className="rounded-2xl border border-border bg-white shadow-sm">
+              <div className="p-4 md:p-5 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-foreground">承認待ちの学生アカウント</h2>
+                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">{pendingStudents.length} 件</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">学生アカウントの有効化/無効化はここだけで行えます。</p>
+              </div>
 
-        <section className="rounded-2xl border border-border bg-white shadow-sm">
-          <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">処理済み学生アカウント</h2>
-            <span className="text-xs text-muted-foreground">{processedStudents.length} 件</span>
-          </div>
-          {processedStudents.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">まだありません。</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {processedStudents.map(user => (
-                <StudentRow key={user.id} user={user} onUpdate={handleUpdateStudentStatus} />
-              ))}
-            </div>
-          )}
-        </section>
+              {pendingStudents.length === 0 ? (
+                <p className="p-4 text-sm text-muted-foreground">承認待ちはありません。</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {pendingStudents.map(user => (
+                    <StudentRow key={user.id} user={user} onUpdate={handleUpdateStudentStatus} />
+                  ))}
+                </div>
+              )}
+            </section>
 
-        <ApplicationsSection
-          applications={sortedApplications}
-          userMap={userMap}
-          jobMap={jobMap}
-          onUpdateStatus={handleUpdateApplication}
-        />
+            <section className="rounded-2xl border border-border bg-white shadow-sm">
+              <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">処理済み学生アカウント</h2>
+                <span className="text-xs text-muted-foreground">{processedStudents.length} 件</span>
+              </div>
+              {processedStudents.length === 0 ? (
+                <p className="p-4 text-sm text-muted-foreground">まだありません。</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {processedStudents.map(user => (
+                    <StudentRow key={user.id} user={user} onUpdate={handleUpdateStudentStatus} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <ApplicationsSection
+              applications={sortedApplications}
+              userMap={userMap}
+              jobMap={jobMap}
+              onUpdateStatus={handleUpdateApplication}
+            />
+          </TabsContent>
+
+          <TabsContent value="jobs">
+            <AllJobsSection jobs={jobs} userMap={userMap} />
+          </TabsContent>
+
+          <TabsContent value="clients">
+            <AllClientsSection clients={allClients} />
+          </TabsContent>
+
+          <TabsContent value="models">
+            <AllModelsSection models={allModels} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   )
@@ -326,4 +360,158 @@ function getContactInfo(user?: UserRecord | null) {
   const snsText = snsType ? `${snsType}: ${snsId || '未入力'}` : snsId ? snsId : ''
   const email = user.email || ''
   return [snsText, email].filter(Boolean).join(' / ')
+}
+
+function AllJobsSection({
+  jobs,
+  userMap,
+}: {
+  jobs: (JobGeneralPayload | JobStudentPayload)[]
+  userMap: Map<number, UserRecord>
+}) {
+  if (jobs.length === 0) {
+    return (
+      <section className="rounded-2xl border border-border bg-white shadow-sm">
+        <div className="p-4 md:p-5 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">全募集一覧</h2>
+        </div>
+        <p className="p-4 text-sm text-muted-foreground">募集はまだありません。</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-white shadow-sm">
+      <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">全募集一覧</h2>
+        <span className="text-xs text-muted-foreground">{jobs.length} 件</span>
+      </div>
+      <div className="divide-y divide-border">
+        {jobs.map((job) => {
+          const client = userMap.get(job.client_id)
+          const clientName = client?.client_company_or_personal_name || client?.email || '不明'
+          const title = ('job_title_general' in job ? job.job_title_general : job.job_title_student) || '無題'
+          const accountType = job.account_type === 'student' ? '学生' : '一般'
+          const status = job.job_status === 'paused' ? '一時停止' : '公開中'
+
+          return (
+            <div key={job.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">{title}</p>
+                <p className="text-xs text-muted-foreground">
+                  ID: {job.id} / クライアント: {clientName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  種別: {accountType} / ステータス: {status}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  作成日: {formatDateTime(job.createdAt)}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function AllClientsSection({ clients }: { clients: UserRecord[] }) {
+  if (clients.length === 0) {
+    return (
+      <section className="rounded-2xl border border-border bg-white shadow-sm">
+        <div className="p-4 md:p-5 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">全クライアント一覧</h2>
+        </div>
+        <p className="p-4 text-sm text-muted-foreground">クライアントはまだいません。</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-white shadow-sm">
+      <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">全クライアント一覧</h2>
+        <span className="text-xs text-muted-foreground">{clients.length} 件</span>
+      </div>
+      <div className="divide-y divide-border">
+        {clients.map((client) => {
+          const displayName = client.client_profile?.client_display_name || client.client_company_or_personal_name || '名称未設定'
+          const clientType = client.client_type === 'corporation' ? '法人' : '個人'
+          const isStudent = client.client_student_plan || client.client_profile?.client_student_plan
+          const contact = getContactInfo(client)
+
+          return (
+            <div key={client.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">{displayName}</p>
+                <p className="text-xs text-muted-foreground">
+                  ID: {client.id} / メール: {client.email}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  種別: {clientType} {isStudent && '(学生プラン)'}
+                </p>
+                {contact && (
+                  <p className="text-xs text-muted-foreground">連絡先: {contact}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  登録日: {formatDateTime(client.createdAt)}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function AllModelsSection({ models }: { models: UserRecord[] }) {
+  if (models.length === 0) {
+    return (
+      <section className="rounded-2xl border border-border bg-white shadow-sm">
+        <div className="p-4 md:p-5 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">全モデル一覧</h2>
+        </div>
+        <p className="p-4 text-sm text-muted-foreground">モデルはまだいません。</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-white shadow-sm">
+      <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">全モデル一覧</h2>
+        <span className="text-xs text-muted-foreground">{models.length} 件</span>
+      </div>
+      <div className="divide-y divide-border">
+        {models.map((model) => {
+          const displayName = model.model_profile?.model_display_name || model.model_signup_name || model.name || '名前未設定'
+          const activityArea = model.model_profile?.model_activity_area || '未設定'
+          const visibility = model.model_profile?.model_profile_visibility === 'public' ? '公開' : '非公開'
+          const contact = getContactInfo(model)
+
+          return (
+            <div key={model.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">{displayName}</p>
+                <p className="text-xs text-muted-foreground">
+                  ID: {model.id} / メール: {model.email}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  活動エリア: {activityArea} / プロフィール: {visibility}
+                </p>
+                {contact && (
+                  <p className="text-xs text-muted-foreground">連絡先: {contact}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  登録日: {formatDateTime(model.createdAt)}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
 }

@@ -6,12 +6,18 @@ import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
 import { getSessionUser, isLoggedIn } from '@/lib/auth'
 import { UserRecord } from '@/lib/users'
+import { listReviews, listUsers } from '@/lib/users'
+import ReviewForm from '@/components/review-form'
+import ReviewList from '@/components/review-list'
 
 export default function ModelDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const [modelUser, setModelUser] = useState<UserRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [allUsers, setAllUsers] = useState<UserRecord[]>([])
+  const [currentUser, setCurrentUser] = useState<UserRecord | null>(null)
 
   const modelId = useMemo(() => Number(params?.id), [params?.id])
 
@@ -32,6 +38,16 @@ export default function ModelDetailPage() {
       }
     }
     load()
+    // load reviews and users
+    ;(async () => {
+      try {
+        setAllUsers(await listUsers())
+        setReviews((await listReviews()).filter(r => r.target_user_id === modelId))
+      } catch (e) {
+        console.error('Failed to load reviews/users', e)
+      }
+    })()
+    setCurrentUser(getSessionUser())
   }, [modelId])
 
   const profile = modelUser?.model_profile as any
@@ -132,6 +148,7 @@ export default function ModelDetailPage() {
               <DetailRow label="体形">{profile?.model_body_type || '未入力'}</DetailRow>
               <DetailRow label="職業">{profile?.model_job_category || '未入力'}</DetailRow>
               <DetailRow label="活動地域">{profile?.model_activity_area || '未入力'}</DetailRow>
+              <DetailRow label="活動可能時間">{profile?.model_available_time || '未入力'}</DetailRow>
               <DetailRow label="性別">{genderLabel || '未入力'}</DetailRow>
               <DetailRow label="身長">{profile?.model_height ? `${profile.model_height}cm` : '未入力'}</DetailRow>
               <DetailRow label="避けたい条件">{profile?.model_ng_conditions || '未入力'}</DetailRow>
@@ -144,6 +161,19 @@ export default function ModelDetailPage() {
               <Button size="lg" onClick={handleApply}>
                 応募する
               </Button>
+            </div>
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium">レビュー</h2>
+              <ReviewList reviews={reviews} users={allUsers} currentUser={currentUser} />
+              {currentUser && currentUser.role !== modelUser.role ? (
+                <ReviewForm
+                  targetUserId={modelUser.id}
+                  currentUser={currentUser}
+                  onSuccess={async () => setReviews((await listReviews()).filter((r: any) => r.target_user_id === modelId))}
+                />
+              ) : (
+                <p className="text-xs text-muted-foreground">ログインして、異なるアカウントで評価できます。</p>
+              )}
             </div>
             </div>
           </div>

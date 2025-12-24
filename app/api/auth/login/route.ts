@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { createSession } from '@/lib/server/sessions'
 
 type StoredUser = {
   id: number
@@ -64,7 +65,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
 
-    return NextResponse.json({ ok: true, user: sanitizeUser(user) })
+    // create a simple session token and store mapping to user id without scattering keys
+    const token = await createSession(user.id)
+
+    return NextResponse.json({ ok: true, user: sanitizeUser(user), token })
   } catch (error) {
     console.error('Login failed', error)
     return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })

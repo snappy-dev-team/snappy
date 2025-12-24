@@ -1,7 +1,9 @@
 "use client"
 
 import Header from '@/components/header'
-import { ClientProfile, listUsers, UserRecord } from '@/lib/users'
+import { ClientProfile, listUsers, UserRecord, listReviews } from '@/lib/users'
+import ReviewForm from '@/components/review-form'
+import ReviewList from '@/components/review-list'
 import { useParams } from 'next/navigation'
 import { Suspense, useEffect, useState, type ReactNode } from 'react'
 
@@ -13,6 +15,9 @@ function ClientIntroContent() {
   const id = params?.id ? Number(params.id) : NaN
   const [user, setUser] = useState<UserRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [allUsers, setAllUsers] = useState<UserRecord[]>([])
+  const [currentUser, setCurrentUser] = useState<UserRecord | null>(null)
 
   useEffect(() => {
     if (Number.isNaN(id)) {
@@ -26,6 +31,19 @@ function ClientIntroContent() {
       })
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    ;(async () => {
+      if (!user?.id) return
+      try {
+        setAllUsers(await listUsers())
+        setReviews((await listReviews()).filter(r => r.target_user_id === user.id))
+      } catch (e) {
+        console.error('Failed to load reviews for client', e)
+      }
+    })()
+    setCurrentUser(typeof window !== 'undefined' ? (window.localStorage.getItem('snappy-user') ? JSON.parse(window.localStorage.getItem('snappy-user')!) : null) : null)
+  }, [user?.id])
 
   if (loading) {
     return <div className="min-h-screen bg-white flex items-center justify-center text-muted-foreground">読み込み中...</div>
@@ -96,6 +114,19 @@ function ClientIntroContent() {
                     <p className="text-xs text-muted-foreground">ご質問はお気軽にご連絡ください</p>
                   </div>
                 </div>
+              </div>
+              <div className="space-y-4">
+                <h2 className="text-lg font-medium">レビュー</h2>
+                <ReviewList reviews={reviews} users={allUsers} currentUser={currentUser} />
+                {currentUser && currentUser.role !== user?.role ? (
+                  <ReviewForm
+                    targetUserId={user!.id}
+                    currentUser={currentUser}
+                    onSuccess={async () => setReviews((await listReviews()).filter((r: any) => r.target_user_id === user!.id))}
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground">ログインして、異なるアカウントで評価できます。</p>
+                )}
               </div>
             </div>
           </div>

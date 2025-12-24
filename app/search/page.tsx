@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card'
 import { listUsers, UserRecord } from '@/lib/users'
 import { isLoggedIn } from '@/lib/auth'
 import { Star } from 'lucide-react'
+import { calculateAge, isAgeInRange, isDateInRange } from '@/lib/search-utils'
 
 const areaLabelMap: Record<string, string> = {
   shibuya: '渋谷',
@@ -88,37 +89,6 @@ const formatReward = (job: ShopJob) => {
   return '謝礼未設定'
 }
 
-// Helper to calculate age from birthdate
-const calculateAge = (birthdate: string): number => {
-  if (!birthdate) return 0
-  const birth = new Date(birthdate)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  return age
-}
-
-// Helper to check if age is in range
-const isAgeInRange = (age: number, range: string): boolean => {
-  if (!range) return true
-  switch (range) {
-    case '18-20':
-      return age >= 18 && age <= 20
-    case '20-25':
-      return age >= 20 && age <= 25
-    case '25-30':
-      return age >= 25 && age <= 30
-    case '30-35':
-      return age >= 30 && age <= 35
-    case '35+':
-      return age >= 35
-    default:
-      return true
-  }
-}
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
@@ -139,6 +109,7 @@ function SearchPageContent() {
     hair: searchParams.get('hair') ?? '',
     gender: searchParams.get('gender') ?? '',
     category: searchParams.get('category') ?? '',
+    date: searchParams.get('date') ?? '',
   }), [searchParams])
 
   useEffect(() => {
@@ -255,12 +226,13 @@ function SearchPageContent() {
   const filteredJobs = useMemo(() => {
     const kw = filters.keyword.trim().toLowerCase()
     const areaLabel = filters.area ? areaLabelMap[filters.area] ?? filters.area : ''
-    
+
     return jobCards.filter(card => {
       const haystack = `${card.displayTitle} ${card.summary} ${card.location} ${card.client?.client_profile?.client_display_name ?? ''} ${card.client?.name ?? ''}`.toLowerCase()
       const matchesKeyword = kw ? haystack.includes(kw) : true
       const matchesArea = areaLabel ? card.location.includes(areaLabel) : true
-      return matchesKeyword && matchesArea
+      const matchesDate = filters.date ? isDateInRange(card.job.job_date_candidates ?? '', filters.date) : true
+      return matchesKeyword && matchesArea && matchesDate
     })
   }, [filters, jobCards])
 

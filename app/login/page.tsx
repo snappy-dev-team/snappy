@@ -1,9 +1,9 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
+import Header from '@/components/header'
 import { getSessionUser, setSessionUser } from '@/lib/auth'
 import { loginUser } from '@/lib/users'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FormEvent, Suspense, useEffect, useState } from 'react'
 
@@ -45,21 +45,7 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="hover:opacity-80 transition-opacity flex items-center">
-            <img
-              src="/images/logo.png"
-              alt="Snappy"
-              width={140}
-              height={40}
-            />
-          </Link>
-          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-            トップへ戻る
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       <main className="max-w-2xl mx-auto px-4 md:px-8 py-12">
         <div className="mb-8">

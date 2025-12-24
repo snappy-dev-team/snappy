@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { clearSessionUser, getSessionUser, setSessionUser } from '@/lib/auth'
 import {
   ClientProfile,
@@ -12,19 +13,21 @@ import {
   StudentAccountStatus,
   UserRecord,
   deleteJob,
+  deleteUser,
   fetchMetrics,
   listJobs,
   listUsers,
   updateJob,
   updateUserProfile,
 } from '@/lib/users'
-import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, UserCog } from 'lucide-react'
+import { ClipboardList, LogOut, ShieldCheck, Sparkles, Star, Trash2, UserCog } from 'lucide-react'
 
 const emptyModelProfile: ModelProfile = {
   model_display_name: '',
   model_birthdate: '',
   model_gender: '',
   model_activity_area: '',
+  model_available_time: '',
   model_types: [],
   model_height: '',
   model_bust: '',
@@ -48,11 +51,18 @@ const emptyClientProfile: ClientProfile = {
   client_company_or_personal_name: '',
   client_contact_name: '',
   client_contact_gender: '',
+  client_main_image: '',
+  client_sub_images: [],
+  client_shop_mood: '',
+  client_shop_features: '',
+  client_contact_image: '',
   client_address: '',
   client_phone: '',
   client_student_plan: false,
   client_student_id_image: '',
   student_account_status: 'pending',
+  contact_sns_type: '',
+  contact_sns_id: '',
 }
 
 const statCards = [
@@ -76,7 +86,10 @@ export default function MyPage() {
   const [clientProfile, setClientProfile] = useState<ClientProfile>(emptyClientProfile)
   const [clientJobs, setClientJobs] = useState<any[]>([])
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
+  const [deletingJob, setDeletingJob] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const modelPhotoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -140,6 +153,22 @@ export default function MyPage() {
     router.replace('/login')
   }
 
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    setError(null)
+    setDeletingAccount(true)
+    try {
+      await deleteUser(user.id)
+      clearSessionUser()
+      router.replace('/login')
+    } catch (err) {
+      console.error(err)
+      setError('アカウントの削除に失敗しました。')
+      setDeletingAccount(false)
+      setShowDeleteAccountConfirm(false)
+    }
+  }
+
   const handleUpdateJobStatus = async (jobId: number, status: 'active' | 'paused') => {
     setError(null)
     try {
@@ -154,6 +183,7 @@ export default function MyPage() {
 
   const handleDeleteJob = async (jobId: number) => {
     setError(null)
+    setDeletingJob(true)
     try {
       if (!user) return
       await deleteJob(jobId, user.id)
@@ -162,6 +192,8 @@ export default function MyPage() {
     } catch (err) {
       console.error(err)
       setError('募集の削除に失敗しました。')
+    } finally {
+      setDeletingJob(false)
     }
   }
 
@@ -193,11 +225,12 @@ export default function MyPage() {
     reader.onload = async eventResult => {
       const base64 = eventResult.target?.result as string
       try {
+        const nextProfile = { ...modelProfile, model_main_image: base64 }
         const updated = await updateUserProfile(user.id, {
-          model_profile: { model_main_image: base64 },
+          model_profile: nextProfile,
         })
         setUser(updated)
-        setModelProfile(prev => ({ ...prev, model_main_image: base64 }))
+        setModelProfile(nextProfile)
         setSessionUser(updated)
       } catch (err) {
         console.error(err)
@@ -313,19 +346,22 @@ export default function MyPage() {
             <h2 className="text-xl font-semibold text-foreground">プロフィール編集・登録</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button className="w-full justify-between" onClick={() => router.push('/mypage/profile/edit')}>
+            <Button
+              className="w-full justify-between h-auto min-h-14 py-4 text-base rounded-xl"
+              onClick={() => router.push('/mypage/profile/edit')}
+            >
               プロフィール編集
               <span className="text-xs text-primary-foreground/90">詳細入力・画像登録</span>
             </Button>
             {isModel ? (
-              <Button variant="outline" className="w-full justify-between" onClick={() => router.push('/search?tab=models')}>
+              <Button variant="outline" className="w-full justify-between h-auto min-h-14 py-4 text-base rounded-xl" onClick={() => router.push('/search?tab=models')}>
                 モデル検索を見る
                 <span className="text-xs text-muted-foreground">公開プロフィール確認</span>
               </Button>
             ) : (
               <>
                 <Button
-                  className="w-full justify-between"
+                  className="w-full justify-between h-auto min-h-14 py-4 text-base rounded-xl"
                   onClick={() => router.push('/mypage/jobs/new?type=general')}
                 >
                   仕事募集（一般）
@@ -353,7 +389,7 @@ export default function MyPage() {
           <section className="rounded-2xl border border-border bg-white shadow-sm">
             <div className="p-4 md:p-5 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">募集中の仕事一覧</h2>
-              <span className="text-xs text-muted-foreground">{clientJobs.length} 件</span>
+              <span className="text-base font-semibold text-foreground">{clientJobs.length} 件</span>
             </div>
             {clientJobs.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">募集中の仕事はありません。</p>
@@ -362,13 +398,9 @@ export default function MyPage() {
                 {clientJobs.map(job => (
                   <div key={job.id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div className="space-y-1 min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/mypage/jobs/${job.id}/edit`)}
-                        className="text-sm font-semibold text-foreground hover:underline text-left"
-                      >
+                      <p className="text-sm font-semibold text-foreground">
                         {jobTitle(job)}
-                      </button>
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {job.account_type === 'student' ? '学生アカウント' : '一般アカウント'} / {jobStatusLabel(job.job_status)}
                       </p>
@@ -386,22 +418,23 @@ export default function MyPage() {
                         variant={(job.job_status ?? 'active') === 'paused' ? 'default' : 'outline'}
                         onClick={() => handleUpdateJobStatus(job.id, 'paused')}
                       >
-                        募集一時停止
+                        一時停止
                       </Button>
-                      {deleteTargetId === job.id ? (
-                        <>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteJob(job.id)}>
-                            削除する
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setDeleteTargetId(null)}>
-                            キャンセル
-                          </Button>
-                        </>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => setDeleteTargetId(job.id)}>
-                          削除
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => router.push(`/mypage/jobs/${job.id}/edit`)}
+                      >
+                        編集
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                        onClick={() => setDeleteTargetId(job.id)}
+                      >
+                        削除
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -409,7 +442,49 @@ export default function MyPage() {
             )}
           </section>
         )}
+
+        <section className="rounded-2xl border border-destructive/30 bg-destructive/5 shadow-sm p-6 md:p-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <Trash2 className="size-4 text-destructive" />
+            <h2 className="text-xl font-semibold text-destructive">アカウント削除</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            アカウントを削除すると、すべてのデータが完全に削除され、復元できません。
+          </p>
+          <Button
+            variant="outline"
+            className="border-destructive text-destructive hover:bg-destructive/10"
+            onClick={() => setShowDeleteAccountConfirm(true)}
+          >
+            <Trash2 className="size-4" />
+            アカウントを削除
+          </Button>
+        </section>
       </main>
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={() => deleteTargetId && handleDeleteJob(deleteTargetId)}
+        title="募集を削除しますか？"
+        description="この募集を削除すると元に戻すことはできません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="destructive"
+        loading={deletingJob}
+      />
+
+      <ConfirmModal
+        open={showDeleteAccountConfirm}
+        onClose={() => setShowDeleteAccountConfirm(false)}
+        onConfirm={handleDeleteAccount}
+        title="アカウントを削除しますか？"
+        description="アカウントを削除すると、すべてのデータが完全に削除され、復元できません。この操作は取り消せません。"
+        confirmLabel="アカウントを削除する"
+        cancelLabel="キャンセル"
+        variant="destructive"
+        loading={deletingAccount}
+      />
     </div>
   )
 }

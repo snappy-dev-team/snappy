@@ -8,7 +8,7 @@ export default function Footer() {
           {/* ブランド情報 */}
           <div className="col-span-1 md:col-span-1">
             <h3 className="text-primary text-xl font-bold mb-4">Snappy</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-primary font-bold">
               カットモデルと美容師をつなぐ
               <br />
               マッチングサービス
