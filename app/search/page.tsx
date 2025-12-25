@@ -8,7 +8,7 @@ import SearchPanel from '@/components/search-panel'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { listUsers, UserRecord } from '@/lib/users'
-import { isLoggedIn } from '@/lib/auth'
+import { getSessionUser, isLoggedIn } from '@/lib/auth'
 import { Star } from 'lucide-react'
 import { calculateAge, isAgeInRange, isDateInRange } from '@/lib/search-utils'
 
@@ -251,6 +251,12 @@ function SearchPageContent() {
 
     if (!isLoggedIn()) {
       router.push(`/login?redirect=/jobs/${jobId}`)
+      return
+    }
+
+    const session = getSessionUser()
+    if (!session || session.role !== 'model') {
+      window.alert('モデルアカウントのみ募集に応募できます。')
       return
     }
 

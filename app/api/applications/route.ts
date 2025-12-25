@@ -36,6 +36,15 @@ export async function POST(req: Request) {
     if (!body.target_job_id && !body.target_model_user_id) {
       return NextResponse.json({ ok: false, error: 'target_job_id or target_model_user_id is required' }, { status: 400 })
     }
+    if (body.target_job_id && body.target_model_user_id) {
+      return NextResponse.json({ ok: false, error: 'target_job_id or target_model_user_id must be set, not both' }, { status: 400 })
+    }
+    if (body.target_job_id && body.applicant_role !== 'model') {
+      return NextResponse.json({ ok: false, error: 'only models can apply to jobs' }, { status: 403 })
+    }
+    if (body.target_model_user_id && body.applicant_role !== 'client') {
+      return NextResponse.json({ ok: false, error: 'only clients can apply to models' }, { status: 403 })
+    }
 
     const applications = ((await redis.get<ApplicationRecord[]>(APPLICATIONS_KEY)) ?? []) as ApplicationRecord[]
     const record: ApplicationRecord = {

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
-import { isLoggedIn } from '@/lib/auth'
+import { getSessionUser, isLoggedIn } from '@/lib/auth'
 
 type ClientProfile = {
   client_display_name?: string
@@ -169,6 +169,11 @@ export default function JobDetailPage() {
     if (!job?.id) return
     if (!isLoggedIn()) {
       router.push(`/login?redirect=/jobs/${job.id}`)
+      return
+    }
+    const session = getSessionUser()
+    if (!session || session.role !== 'model') {
+      window.alert('モデルアカウントのみ募集に応募できます。')
       return
     }
     router.push(`/apply/confirm?type=job&targetId=${job.id}`)

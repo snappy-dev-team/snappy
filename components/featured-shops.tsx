@@ -71,9 +71,13 @@ export default function FeaturedShops() {
     const fetchShops = async () => {
       try {
         const [jobsRes, usersRes] = await Promise.all([fetch('/api/jobs'), fetch('/api/users')])
-        if (!jobsRes.ok || !usersRes.ok) throw new Error('failed to fetch shops')
-        const jobsData = (await jobsRes.json()) as ShopJob[]
-        const users = (await usersRes.json()) as Client[]
+        if (!jobsRes.ok || !usersRes.ok) {
+          console.error('Failed to fetch shops', { jobs: jobsRes.status, users: usersRes.status })
+          setCards([])
+          return
+        }
+        const jobsData = (await jobsRes.json().catch(() => [])) as ShopJob[]
+        const users = (await usersRes.json().catch(() => [])) as Client[]
         const clients = users.filter((user) => user.role === 'client')
         const clientMap = new Map(clients.map((client) => [client.id, client]))
 

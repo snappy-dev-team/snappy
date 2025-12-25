@@ -72,6 +72,11 @@ export default function ModelDetailPage() {
       router.push(`/login?redirect=/models/${modelUser.id}`)
       return
     }
+    const session = getSessionUser()
+    if (!session || session.role !== 'client') {
+      window.alert('クライアントアカウントのみモデルに応募できます。')
+      return
+    }
     router.push(`/apply/confirm?type=model&targetId=${modelUser.id}`)
   }
 
