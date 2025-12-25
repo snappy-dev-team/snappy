@@ -289,8 +289,16 @@ export default function MyPage() {
                   )}
                 </button>
               ) : (
-                <div className="size-16 md:size-20 rounded-full bg-primary/10 flex items-center justify-center text-2xl text-primary">
-                  {profileName.slice(0, 1).toUpperCase()}
+                <div className="size-16 md:size-20 rounded-full overflow-hidden border border-border bg-neutral-100 flex items-center justify-center text-2xl text-primary">
+                  {clientProfile.client_main_image ? (
+                    <img
+                      src={clientProfile.client_main_image}
+                      alt={profileName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    profileName.slice(0, 1).toUpperCase()
+                  )}
                 </div>
               )}
               <div>

@@ -174,7 +174,11 @@ export async function PATCH(req: Request) {
     }
 
     const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
-    const index = users.findIndex(u => u.id === body.id)
+    const normalizedId = Number(body.id)
+    if (!Number.isFinite(normalizedId)) {
+      return NextResponse.json({ ok: false, error: 'invalid id' }, { status: 400 })
+    }
+    const index = users.findIndex(u => u.id === normalizedId)
     if (index === -1) {
       return NextResponse.json({ ok: false, error: 'user not found' }, { status: 404 })
     }
@@ -216,7 +220,11 @@ export async function DELETE(req: Request) {
     }
 
     const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
-    const index = users.findIndex(u => u.id === body.id)
+    const normalizedId = Number(body.id)
+    if (!Number.isFinite(normalizedId)) {
+      return NextResponse.json({ ok: false, error: 'invalid id' }, { status: 400 })
+    }
+    const index = users.findIndex(u => u.id === normalizedId)
     if (index === -1) {
       return NextResponse.json({ ok: false, error: 'user not found' }, { status: 404 })
     }

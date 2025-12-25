@@ -117,13 +117,13 @@ export default function ModelDetailPage() {
         <section className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0">
             <div className="p-6 md:p-8 space-y-3 bg-neutral-50">
-              <div className="w-full aspect-[4/3] max-h-[320px] bg-neutral-100 rounded-2xl overflow-hidden">
+              <div className="w-full aspect-square bg-neutral-100 rounded-2xl overflow-hidden">
                 <img src={mainImage} alt={displayName} className="w-full h-full object-cover" />
               </div>
               {subImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
                   {subImages.map((image: string, index: number) => (
-                    <div key={`${image}-${index}`} className="aspect-[4/3] bg-neutral-100 rounded-xl overflow-hidden">
+                    <div key={`${image}-${index}`} className="aspect-square bg-neutral-100 rounded-xl overflow-hidden">
                       <img src={image} alt={`${displayName} ${index + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}

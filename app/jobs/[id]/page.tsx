@@ -252,8 +252,12 @@ export default function JobDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               {job.account_type === 'student' ? (
                 <>
-                  <DetailRow label="募集タイトル">{job.job_title_student || '記載なし'}</DetailRow>
-                  <DetailRow label="目的">{job.job_purpose_student || '記載なし'}</DetailRow>
+                  <DetailRow label="募集タイトル" fullWidth>
+                    {job.job_title_student || '記載なし'}
+                  </DetailRow>
+                  <DetailRow label="目的" fullWidth>
+                    {job.job_purpose_student || '記載なし'}
+                  </DetailRow>
                   <DetailRow label="ジャンル">{job.job_genre_student || '記載なし'}</DetailRow>
                   <DetailRow label="人数">{job.job_number_student || '記載なし'}</DetailRow>
                   <DetailRow label="スタイリスト名">{job.job_stylist_name_student || '記載なし'}</DetailRow>
@@ -262,8 +266,12 @@ export default function JobDetailPage() {
                 </>
               ) : (
                 <>
-                  <DetailRow label="募集タイトル">{job.job_title_general || '記載なし'}</DetailRow>
-                  <DetailRow label="目的">{job.job_purpose_general || '記載なし'}</DetailRow>
+                  <DetailRow label="募集タイトル" fullWidth>
+                    {job.job_title_general || '記載なし'}
+                  </DetailRow>
+                  <DetailRow label="目的" fullWidth>
+                    {job.job_purpose_general || '記載なし'}
+                  </DetailRow>
                   <DetailRow label="ジャンル">{job.job_genre_general || '記載なし'}</DetailRow>
                   <DetailRow label="人数">{job.job_number_general || '記載なし'}</DetailRow>
                   <DetailRow label="店名">{job.job_salon_name_general || '記載なし'}</DetailRow>
@@ -278,8 +286,12 @@ export default function JobDetailPage() {
               <DetailRow label="髪の条件">{job.job_model_hair_conditions || '記載なし'}</DetailRow>
               <DetailRow label="顔出し範囲">{job.job_model_face_visibility || '記載なし'}</DetailRow>
               <DetailRow label="経験">{job.job_model_experience || '記載なし'}</DetailRow>
-              <DetailRow label="その他条件">{job.job_model_other_conditions || '記載なし'}</DetailRow>
-              <DetailRow label="施術内容">{job.job_service_contents || '記載なし'}</DetailRow>
+              <DetailRow label="その他条件" fullWidth>
+                {job.job_model_other_conditions || '記載なし'}
+              </DetailRow>
+              <DetailRow label="施術内容" fullWidth>
+                {job.job_service_contents || '記載なし'}
+              </DetailRow>
               <DetailRow label="施術後スタイル">{job.job_style_after || '記載なし'}</DetailRow>
               <DetailRow label="所要時間">{job.job_required_time || '記載なし'}</DetailRow>
               <DetailRow label="服装・メイク">{job.job_dress_makeup || '記載なし'}</DetailRow>
@@ -288,7 +300,9 @@ export default function JobDetailPage() {
               <DetailRow label="報酬金額">{job.job_reward_cash || '記載なし'}</DetailRow>
               <DetailRow label="交通費">{job.job_reward_transport || '記載なし'}</DetailRow>
               <DetailRow label="報酬詳細">{job.job_reward_details || '記載なし'}</DetailRow>
-              <DetailRow label="日付候補">{job.job_date_candidates || '記載なし'}</DetailRow>
+              <DetailRow label="日付候補" fullWidth>
+                {job.job_date_candidates || '記載なし'}
+              </DetailRow>
               <DetailRow label="時間帯">{job.job_time_range || '記載なし'}</DetailRow>
               <DetailRow label="撮影場所">{job.job_shoot_location || '記載なし'}</DetailRow>
               <DetailRow label="集合場所">{job.job_meeting_point || '記載なし'}</DetailRow>
@@ -342,9 +356,17 @@ export default function JobDetailPage() {
   )
 }
 
-function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+function DetailRow({
+  label,
+  children,
+  fullWidth = false,
+}: {
+  label: string
+  children: ReactNode
+  fullWidth?: boolean
+}) {
   return (
-    <div className="space-y-1">
+    <div className={`space-y-1 ${fullWidth ? 'md:col-span-2' : ''}`}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <div className="p-3 rounded-xl border border-border bg-neutral-soft/60 text-foreground">{children}</div>
     </div>
