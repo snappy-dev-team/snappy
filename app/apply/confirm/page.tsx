@@ -28,6 +28,18 @@ function ApplyConfirmPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [sessionUser, setSessionUser] = useState<UserRecord | null>(null)
+
+  const roleError = useMemo(() => {
+    if (!sessionUser || !type) return null
+    if (type === 'job' && sessionUser.role !== 'model') {
+      return 'モデルアカウントのみ募集に応募できます。'
+    }
+    if (type === 'model' && sessionUser.role !== 'client') {
+      return 'クライアントアカウントのみモデルに応募できます。'
+    }
+    return null
+  }, [sessionUser, type])
 
   useEffect(() => {
     const session = getSessionUser()
@@ -35,6 +47,7 @@ function ApplyConfirmPage() {
       router.replace(`/login?redirect=/apply/confirm?type=${type ?? ''}&targetId=${targetId ?? ''}`)
       return
     }
+    setSessionUser(session)
   }, [router, targetId, type])
 
   useEffect(() => {
@@ -76,7 +89,10 @@ function ApplyConfirmPage() {
       router.replace(`/login?redirect=/apply/confirm?type=${type ?? ''}&targetId=${targetId ?? ''}`)
       return
     }
+    setSessionUser(session)
     if (!type || !targetId) return
+    if (type === 'job' && session.role !== 'model') return
+    if (type === 'model' && session.role !== 'client') return
 
     setSubmitting(true)
     setError(null)
@@ -143,13 +159,13 @@ function ApplyConfirmPage() {
           </p>
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {(error || roleError) && <p className="text-sm text-destructive">{error ?? roleError}</p>}
 
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={() => router.back()} disabled={submitting}>
             戻る
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+          <Button onClick={handleSubmit} disabled={submitting || Boolean(roleError)}>
             {submitting ? '送信中...' : 'この内容で応募する'}
           </Button>
         </div>

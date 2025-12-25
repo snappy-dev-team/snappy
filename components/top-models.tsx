@@ -41,8 +41,12 @@ export default function TopModels() {
     const fetchModels = async () => {
       try {
         const res = await fetch('/api/models')
-        if (!res.ok) throw new Error('failed to fetch models')
-        const data = await res.json()
+        if (!res.ok) {
+          console.error('Failed to fetch models', res.status)
+          setModels([])
+          return
+        }
+        const data = await res.json().catch(() => [])
         setModels(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('Failed to load models', error)
