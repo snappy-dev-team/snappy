@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useId, useRef } from 'react'
 import { Upload, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +19,7 @@ type ImageUploadProps = BaseProps & {
 
 export function ImageUpload({ label, value, onChange, helperText, className }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -72,10 +73,10 @@ export function ImageUpload({ label, value, onChange, helperText, className }: I
             accept="image/*"
             onChange={handleFileChange}
             className="hidden"
-            id={`image-upload-${label}`}
+            id={`image-upload-${inputId}`}
           />
           <label
-            htmlFor={`image-upload-${label}`}
+            htmlFor={`image-upload-${inputId}`}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted cursor-pointer"
           >
             <Upload className="size-4" />
@@ -100,6 +101,8 @@ type MultiImageUploadProps = BaseProps & {
 
 export function MultiImageUpload({ label, values, onChange, helperText, className }: MultiImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
+  const normalizedValues = Array.isArray(values) ? values : []
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -126,13 +129,13 @@ export function MultiImageUpload({ label, values, onChange, helperText, classNam
       })
     })
 
-    Promise.all(promises).then(newImages => onChange([...values, ...newImages]))
+    Promise.all(promises).then(newImages => onChange([...normalizedValues, ...newImages]))
 
     if (inputRef.current) inputRef.current.value = ''
   }
 
   const handleRemove = (index: number) => {
-    const next = values.filter((_, i) => i !== index)
+    const next = normalizedValues.filter((_, i) => i !== index)
     onChange(next)
   }
 
@@ -141,7 +144,7 @@ export function MultiImageUpload({ label, values, onChange, helperText, classNam
       <span className="font-medium text-foreground">{label}</span>
       <div className="space-y-3">
         <div className="flex flex-wrap gap-3">
-          {values.map((value, index) => {
+          {normalizedValues.map((value, index) => {
             const isValidImage = value && (value.startsWith('data:image') || value.startsWith('http'))
             if (!isValidImage) return null
             return (
@@ -166,17 +169,17 @@ export function MultiImageUpload({ label, values, onChange, helperText, classNam
             multiple
             onChange={handleFileChange}
             className="hidden"
-            id={`multi-image-upload-${label}`}
+            id={`multi-image-upload-${inputId}`}
           />
           <label
-            htmlFor={`multi-image-upload-${label}`}
+            htmlFor={`multi-image-upload-${inputId}`}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted cursor-pointer"
           >
             <Upload className="size-4" />
             画像を追加
           </label>
-          {values.length > 0 && (
-            <span className="text-xs text-muted-foreground">{values.length}枚を選択中</span>
+          {normalizedValues.length > 0 && (
+            <span className="text-xs text-muted-foreground">{normalizedValues.length}枚を選択中</span>
           )}
         </div>
         {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}

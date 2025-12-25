@@ -100,6 +100,25 @@ type JobDetail =
 
 const FALLBACK_IMAGE = 'https://placehold.co/800x500?text=Recruiting+Detail'
 
+const normalizeJobImages = (list?: string[]) => {
+  if (!Array.isArray(list)) return []
+  const normalized: string[] = []
+  for (let i = 0; i < list.length; i += 1) {
+    const current = (list[i] ?? '').trim()
+    if (!current) continue
+    if (current.startsWith('data:image') && !current.includes(';base64,')) {
+      const next = (list[i + 1] ?? '').trim()
+      if (next && !next.startsWith('data:image')) {
+        normalized.push(`${current},${next}`)
+        i += 1
+        continue
+      }
+    }
+    normalized.push(current)
+  }
+  return normalized.filter(item => item.startsWith('data:image') || item.startsWith('http') || item.startsWith('/'))
+}
+
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
@@ -154,8 +173,9 @@ export default function JobDetailPage() {
     job?.account_type === 'student'
       ? job.job_portfolio_images_student
       : job?.job_portfolio_images_general
-  const heroImage = Array.isArray(imageList) && imageList[0] ? imageList[0] : FALLBACK_IMAGE
-  const subImages = Array.isArray(imageList) ? imageList.slice(1, 5).filter(Boolean) : []
+  const normalizedImages = normalizeJobImages(imageList)
+  const heroImage = normalizedImages[0] ?? FALLBACK_IMAGE
+  const subImages = normalizedImages.slice(1, 5)
   const clientDisplayName =
     client?.client_profile?.client_display_name || client?.client_company_or_personal_name || client?.name || 'クライアント名未設定'
   const clientMainImage = client?.client_profile?.client_main_image || 'https://placehold.co/600x450?text=Salon'
@@ -218,13 +238,13 @@ export default function JobDetailPage() {
         <section className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0">
             <div className="p-6 md:p-8 space-y-3 bg-neutral-50">
-              <div className="w-full aspect-[4/3] max-h-[320px] bg-neutral-100 rounded-2xl overflow-hidden">
+              <div className="w-full aspect-square bg-neutral-100 rounded-2xl overflow-hidden">
                 <img src={heroImage} alt={displayTitle} className="w-full h-full object-cover" />
               </div>
               {subImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
                   {subImages.map((image, index) => (
-                    <div key={`${image}-${index}`} className="aspect-[4/3] bg-neutral-100 rounded-xl overflow-hidden">
+                    <div key={`${image}-${index}`} className="aspect-square bg-neutral-100 rounded-xl overflow-hidden">
                       <img src={image} alt={`${displayTitle} ${index + 2}`} className="w-full h-full object-cover" />
                     </div>
                   ))}

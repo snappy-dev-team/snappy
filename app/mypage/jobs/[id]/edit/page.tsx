@@ -419,11 +419,20 @@ function JobEditContent() {
     setStudentTimeRange(parseTimeRangeValue(studentForm.job_time_range))
   }, [studentForm.job_time_range])
 
-  const parseJobImages = (value: string) =>
-    (value ?? '')
+  const parseJobImages = (value: string) => {
+    const normalized = (value ?? '').trim()
+    if (!normalized) return []
+    const matches = normalized.match(
+      /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+|https?:\/\/[^\s,]+/g,
+    )
+    if (matches && matches.length > 0) {
+      return matches
+    }
+    return normalized
       .split(',')
       .map(item => item.trim())
       .filter(Boolean)
+  }
 
   const handleJobImageFiles = (files: FileList | null, targetForm: 'general' | 'student') => {
     if (!files || files.length === 0) return
