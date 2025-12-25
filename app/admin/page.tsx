@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Header from '@/components/header'
 import { Button } from '@/components/ui/button'
+import { TextInput } from '@/components/ui/TextInput'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { listApplications, updateApplicationStatus, type ApplicationRecord, type ApplicationStatus } from '@/lib/applications'
+import { createNotice, deleteNotice, listNotices, updateNotice, type NoticeRecord } from '@/lib/notices'
 import { listJobs, listUsers, runSeed, updateStudentStatus, type StudentAccountStatus, type UserRecord, type JobGeneralPayload, type JobStudentPayload } from '@/lib/users'
 
 const studentStatusLabel: Record<StudentAccountStatus, string> = {
@@ -30,13 +32,22 @@ const formatDateTime = (value?: string) => {
   }).format(date)
 }
 
+const sortNotices = (items: NoticeRecord[]) =>
+  [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
 export default function AdminPage() {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [applications, setApplications] = useState<ApplicationRecord[]>([])
   const [jobs, setJobs] = useState<any[]>([])
+  const [notices, setNotices] = useState<NoticeRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [noticeTitle, setNoticeTitle] = useState('')
+  const [noticeUrl, setNoticeUrl] = useState('')
+  const [editingNoticeId, setEditingNoticeId] = useState<number | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editUrl, setEditUrl] = useState('')
 
   const userMap = useMemo(() => {
     const map = new Map<number, UserRecord>()
@@ -51,10 +62,16 @@ export default function AdminPage() {
     setMessage(null)
     setLoading(true)
     try {
-      const [fetchedUsers, fetchedApplications, fetchedJobs] = await Promise.all([listUsers(), listApplications(), listJobs()])
+      const [fetchedUsers, fetchedApplications, fetchedJobs, fetchedNotices] = await Promise.all([
+        listUsers(),
+        listApplications(),
+        listJobs(),
+        listNotices(),
+      ])
       setUsers(fetchedUsers)
       setApplications(fetchedApplications)
       setJobs(fetchedJobs as any[])
+      setNotices(fetchedNotices)
     } catch (err) {
       console.error(err)
       setError('データ取得に失敗しました')
@@ -106,6 +123,73 @@ export default function AdminPage() {
     }
   }
 
+  const handleCreateNotice = async () => {
+    setError(null)
+    setMessage(null)
+    const title = noticeTitle.trim()
+    if (!title) {
+      setError('タイトルは必須です。')
+      return
+    }
+    try {
+      const notice = await createNotice({ title, url: noticeUrl.trim() })
+      setNotices(prev => sortNotices([notice, ...prev]))
+      setNoticeTitle('')
+      setNoticeUrl('')
+      setMessage('お知らせを作成しました。')
+    } catch (err) {
+      console.error(err)
+      setError('お知らせの作成に失敗しました。')
+    }
+  }
+
+  const handleStartEditNotice = (notice: NoticeRecord) => {
+    setEditingNoticeId(notice.id)
+    setEditTitle(notice.title)
+    setEditUrl(notice.url ?? '')
+  }
+
+  const handleCancelEditNotice = () => {
+    setEditingNoticeId(null)
+    setEditTitle('')
+    setEditUrl('')
+  }
+
+  const handleUpdateNotice = async () => {
+    if (!editingNoticeId) return
+    setError(null)
+    setMessage(null)
+    const title = editTitle.trim()
+    if (!title) {
+      setError('タイトルは必須です。')
+      return
+    }
+    try {
+      const updated = await updateNotice({ id: editingNoticeId, title, url: editUrl.trim() })
+      setNotices(prev => sortNotices(prev.map(item => (item.id === updated.id ? updated : item))))
+      handleCancelEditNotice()
+      setMessage('お知らせを更新しました。')
+    } catch (err) {
+      console.error(err)
+      setError('お知らせの更新に失敗しました。')
+    }
+  }
+
+  const handleDeleteNotice = async (id: number) => {
+    setError(null)
+    setMessage(null)
+    if (typeof window !== 'undefined' && !window.confirm('このお知らせを削除しますか？')) return
+    try {
+      await deleteNotice(id)
+      setNotices(prev => prev.filter(item => item.id !== id))
+      if (editingNoticeId === id) handleCancelEditNotice()
+      setMessage('お知らせを削除しました。')
+    } catch (err) {
+      console.error(err)
+      setError('お知らせの削除に失敗しました。')
+    }
+  }
+
   const studentCandidates = useMemo(
     () =>
       users
@@ -128,6 +212,8 @@ export default function AdminPage() {
     () => [...applications].sort((a, b) => b.id - a.id),
     [applications],
   )
+
+  const sortedNotices = useMemo(() => sortNotices(notices), [notices])
 
   const allClients = useMemo(
     () => users.filter(user => user.role === 'client'),
@@ -163,6 +249,7 @@ export default function AdminPage() {
             <TabsTrigger value="jobs">全募集 ({jobs.length})</TabsTrigger>
             <TabsTrigger value="clients">全クライアント ({allClients.length})</TabsTrigger>
             <TabsTrigger value="models">全モデル ({allModels.length})</TabsTrigger>
+            <TabsTrigger value="notices">お知らせ ({notices.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students" className="space-y-6">
@@ -220,6 +307,26 @@ export default function AdminPage() {
 
           <TabsContent value="models">
             <AllModelsSection models={allModels} />
+          </TabsContent>
+
+          <TabsContent value="notices">
+            <NoticesSection
+              notices={sortedNotices}
+              noticeTitle={noticeTitle}
+              noticeUrl={noticeUrl}
+              onChangeTitle={setNoticeTitle}
+              onChangeUrl={setNoticeUrl}
+              onCreate={handleCreateNotice}
+              onEditStart={handleStartEditNotice}
+              onDelete={handleDeleteNotice}
+              editingNoticeId={editingNoticeId}
+              editTitle={editTitle}
+              editUrl={editUrl}
+              onEditTitle={setEditTitle}
+              onEditUrl={setEditUrl}
+              onUpdate={handleUpdateNotice}
+              onEditCancel={handleCancelEditNotice}
+            />
           </TabsContent>
         </Tabs>
       </main>
@@ -512,6 +619,116 @@ function AllModelsSection({ models }: { models: UserRecord[] }) {
           )
         })}
       </div>
+    </section>
+  )
+}
+
+function NoticesSection({
+  notices,
+  noticeTitle,
+  noticeUrl,
+  onChangeTitle,
+  onChangeUrl,
+  onCreate,
+  onEditStart,
+  onDelete,
+  editingNoticeId,
+  editTitle,
+  editUrl,
+  onEditTitle,
+  onEditUrl,
+  onUpdate,
+  onEditCancel,
+}: {
+  notices: NoticeRecord[]
+  noticeTitle: string
+  noticeUrl: string
+  onChangeTitle: (value: string) => void
+  onChangeUrl: (value: string) => void
+  onCreate: () => void
+  onEditStart: (notice: NoticeRecord) => void
+  onDelete: (id: number) => void
+  editingNoticeId: number | null
+  editTitle: string
+  editUrl: string
+  onEditTitle: (value: string) => void
+  onEditUrl: (value: string) => void
+  onUpdate: () => void
+  onEditCancel: () => void
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-white shadow-sm">
+      <div className="p-4 md:p-5 border-b border-border">
+        <h2 className="text-lg font-semibold text-foreground">お知らせ</h2>
+        <p className="text-xs text-muted-foreground mt-1">お知らせの追加・編集・削除ができます。</p>
+      </div>
+
+      <div className="p-4 md:p-5 space-y-4 border-b border-border">
+        <div className="grid gap-3 md:grid-cols-2">
+          <TextInput label="タイトル" value={noticeTitle} onChange={onChangeTitle} placeholder="お知らせタイトル" />
+          <TextInput label="URL（任意）" value={noticeUrl} onChange={onChangeUrl} placeholder="https://..." />
+        </div>
+        <Button onClick={onCreate}>追加</Button>
+      </div>
+
+      {notices.length === 0 ? (
+        <p className="p-4 text-sm text-muted-foreground">お知らせはまだありません。</p>
+      ) : (
+        <div className="divide-y divide-border">
+          {notices.map((notice) => {
+            const isEditing = editingNoticeId === notice.id
+            return (
+              <div key={notice.id} className="p-4 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                <div className="space-y-2 flex-1">
+                  {isEditing ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <TextInput label="タイトル" value={editTitle} onChange={onEditTitle} />
+                      <TextInput label="URL（任意）" value={editUrl} onChange={onEditUrl} />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-foreground">{notice.title}</p>
+                      {notice.url ? (
+                        <a
+                          href={notice.url}
+                          className="text-xs text-primary hover:underline break-words"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {notice.url}
+                        </a>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">リンクなし</p>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isEditing ? (
+                    <>
+                      <Button size="sm" onClick={onUpdate}>
+                        保存
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={onEditCancel}>
+                        キャンセル
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => onEditStart(notice)}>
+                        編集
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => onDelete(notice.id)}>
+                        削除
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
