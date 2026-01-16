@@ -22,7 +22,11 @@ const sortNotices = (items: NoticeRecord[]) =>
 
 export async function GET() {
   const notices = ((await redis.get<NoticeRecord[]>(NOTICES_KEY)) ?? []) as NoticeRecord[]
-  return NextResponse.json(sortNotices(notices))
+  return NextResponse.json(sortNotices(notices), {
+    headers: {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+    },
+  })
 }
 
 export async function POST(req: Request) {

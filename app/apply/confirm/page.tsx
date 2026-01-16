@@ -59,14 +59,14 @@ function ApplyConfirmPage() {
       }
       try {
         if (type === 'job') {
-          const res = await fetch('/api/jobs', { cache: 'no-store' })
+          const res = await fetch('/api/jobs')
           if (!res.ok) throw new Error('failed to fetch job')
           const jobs = (await res.json()) as JobDetail[]
           const matched = jobs.find(j => j.id === targetId) ?? null
           if (!matched) throw new Error('job not found')
           setJob(matched)
         } else {
-          const res = await fetch('/api/users', { cache: 'no-store' })
+          const res = await fetch('/api/users')
           if (!res.ok) throw new Error('failed to fetch model')
           const users = (await res.json()) as UserRecord[]
           const matched = users.find(u => u.id === targetId && u.role === 'model') ?? null

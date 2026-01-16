@@ -40,7 +40,11 @@ export async function GET() {
   try {
     const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
     const models = users.filter((u) => u.role === 'model' && hasCompletedProfile(u.model_profile))
-    return NextResponse.json(models)
+    return NextResponse.json(models, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    })
   } catch (error) {
     console.error('Models fetch failed', error)
     return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })

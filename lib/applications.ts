@@ -14,7 +14,7 @@ export type ApplicationRecord = {
 const jsonHeaders = { 'Content-Type': 'application/json' }
 
 export async function listApplications(): Promise<ApplicationRecord[]> {
-  const res = await fetch('/api/applications', { cache: 'no-store' })
+  const res = await fetch('/api/applications')
   if (!res.ok) throw new Error('応募一覧の取得に失敗しました')
   return res.json()
 }

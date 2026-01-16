@@ -22,7 +22,11 @@ export async function GET() {
   try {
     const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
     const shops = users.filter((u) => u.role === 'client')
-    return NextResponse.json(shops)
+    return NextResponse.json(shops, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    })
   } catch (error) {
     console.error('Shops fetch failed', error)
     return NextResponse.json({ ok: false, error: 'internal_error' }, { status: 500 })

@@ -140,6 +140,7 @@ export default function TopModels() {
                             src={model.mainImage}
                             alt={model.displayName}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                         ) : (
                           <User className="w-20 h-20 text-primary/40" />
