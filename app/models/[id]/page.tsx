@@ -26,7 +26,7 @@ export default function ModelDetailPage() {
     const load = async () => {
       if (!modelId) return
       try {
-        const res = await fetch('/api/users', { cache: 'no-store' })
+        const res = await fetch('/api/users')
         if (!res.ok) throw new Error('failed to fetch model')
         const users = (await res.json()) as UserRecord[]
         const matched = users.find(u => u.id === modelId && u.role === 'model') ?? null
@@ -118,13 +118,13 @@ export default function ModelDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0">
             <div className="p-6 md:p-8 space-y-3 bg-neutral-50">
               <div className="w-full aspect-square bg-neutral-100 rounded-2xl overflow-hidden">
-                <img src={mainImage} alt={displayName} className="w-full h-full object-cover" />
+                <img src={mainImage} alt={displayName} className="w-full h-full object-cover" loading="lazy" />
               </div>
               {subImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
                   {subImages.map((image: string, index: number) => (
                     <div key={`${image}-${index}`} className="aspect-square bg-neutral-100 rounded-xl overflow-hidden">
-                      <img src={image} alt={`${displayName} ${index + 1}`} className="w-full h-full object-cover" />
+                      <img src={image} alt={`${displayName} ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                   ))}
                 </div>

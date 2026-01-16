@@ -57,7 +57,11 @@ const JOBS_KEY = 'jobs'
 
 export async function GET() {
   const jobs = ((await redis.get<JobPayload[]>(JOBS_KEY)) ?? []) as JobPayload[]
-  return NextResponse.json(jobs)
+  return NextResponse.json(jobs, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+    },
+  })
 }
 
 export async function POST(req: Request) {

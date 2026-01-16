@@ -210,7 +210,7 @@ const jsonHeaders = {
 }
 
 export async function listUsers(): Promise<UserRecord[]> {
-  const res = await fetch('/api/users', { cache: 'no-store' })
+  const res = await fetch('/api/users')
   if (!res.ok) {
     throw new Error('ユーザー一覧の取得に失敗しました')
   }
@@ -281,7 +281,7 @@ export async function loginUser(email: string, password: string, role?: MemberRo
 }
 
 export async function listJobs(): Promise<(JobGeneralPayload | JobStudentPayload)[]> {
-  const res = await fetch('/api/jobs', { cache: 'no-store' })
+  const res = await fetch('/api/jobs')
   if (!res.ok) throw new Error('仕事募集の取得に失敗しました')
   return res.json()
 }
@@ -320,13 +320,13 @@ export async function deleteJob(id: number, clientId: number) {
 }
 
 export async function listMatches(): Promise<MatchRecord[]> {
-  const res = await fetch('/api/matches', { cache: 'no-store' })
+  const res = await fetch('/api/matches')
   if (!res.ok) throw new Error('マッチ履歴の取得に失敗しました')
   return res.json()
 }
 
 export async function listReviews(): Promise<ReviewRecord[]> {
-  const res = await fetch('/api/reviews', { cache: 'no-store' })
+  const res = await fetch('/api/reviews')
   if (!res.ok) throw new Error('レビューの取得に失敗しました')
   return res.json()
 }
@@ -374,7 +374,7 @@ export async function deleteReview(id: number) {
 }
 
 export async function fetchMetrics(userId: number): Promise<Metrics> {
-  const res = await fetch(`/api/metrics?userId=${userId}`, { cache: 'no-store' })
+  const res = await fetch(`/api/metrics?userId=${userId}`)
   if (!res.ok) throw new Error('指標の取得に失敗しました')
   return res.json()
 }
@@ -391,7 +391,7 @@ export async function updateStudentStatus(userId: number, status: StudentAccount
 }
 
 export async function runSeed() {
-  const res = await fetch('/api/admin/seed', { cache: 'no-store' })
+  const res = await fetch('/api/admin/seed', { cache: 'no-store' }) // 管理操作のためキャッシュ無効
   if (!res.ok) throw new Error('サンプルデータの投入に失敗しました')
   return res.json()
 }

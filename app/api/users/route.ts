@@ -93,7 +93,11 @@ const buildClientProfile = (body: IncomingPayload) => ({
 
 export async function GET() {
   const users = ((await redis.get<StoredUser[]>(USERS_KEY)) ?? []) as StoredUser[]
-  return NextResponse.json(users.map(sanitizeUser))
+  return NextResponse.json(users.map(sanitizeUser), {
+    headers: {
+      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+    },
+  })
 }
 
 export async function POST(req: Request) {

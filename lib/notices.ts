@@ -10,7 +10,7 @@ const jsonHeaders = {
 }
 
 export async function listNotices(): Promise<NoticeRecord[]> {
-  const res = await fetch('/api/notices', { cache: 'no-store' })
+  const res = await fetch('/api/notices')
   if (!res.ok) {
     throw new Error('お知らせの取得に失敗しました')
   }

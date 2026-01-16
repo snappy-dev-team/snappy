@@ -181,6 +181,7 @@ export default function FeaturedShops() {
                       src={shop.image || FALLBACK_IMAGE}
                       alt={shop.displayTitle}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </div>
 

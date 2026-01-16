@@ -19,7 +19,7 @@ export default function Notices() {
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const res = await fetch('/api/notices', { cache: 'no-store' })
+        const res = await fetch('/api/notices')
         if (!res.ok) {
           console.error('Failed to fetch notices', res.status)
           setNotices([])
